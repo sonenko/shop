@@ -8,6 +8,16 @@ version := "0.0.1"
 
 scalaVersion := "2.11.8"
 
+scalacOptions ++= List(
+  "-feature",
+  "-language:postfixOps",
+  "-deprecation",
+  "-Ywarn-dead-code"
+)
+
+assemblyJarName in assembly := "Shop.jar"
+mainClass in assembly := Some("com.github.sonenko.shop.Main")
+
 resolvers ++= List(
   "Akka Snapshot Repository" at "http://repo.akka.io/snapshots/",
   "Artima Maven Repository" at "http://repo.artima.com/releases",
@@ -24,7 +34,6 @@ libraryDependencies ++= List(
   "com.typesafe.akka" %% "akka-actor" % akkaV,
   "com.typesafe.akka" %% "akka-persistence" % akkaV,
   "com.typesafe.akka" %% "akka-remote" % akkaV,
-  //  temp
   "org.iq80.leveldb" % "leveldb" % "0.7",
   "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8",
   "joda-time" % "joda-time" % "2.9.4",
