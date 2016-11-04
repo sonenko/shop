@@ -8,15 +8,28 @@ sbt
 run
 ```
 
-#### Run app in prod mode
+#### Run app in prod mode (change `local.conf` in `run` folder)
 ```
-cd  run
+cd run
 ./make.sh
-./start.sh
+./run.sh
 ```
 
-#### Few curl endpoint
+#### Run tests
+```
+sbt
+test
+```
+
+## curl endpoints examples
+#### Basket rest endpoints
 ```
 // List baskets
 curl "http://localhost:7777/api/shoppingbasket" -i
+```
+
+#### Products endpoints
+```
+// List products
+curl "http://localhost:7777/api/products" | python -m json.tool
 ```
