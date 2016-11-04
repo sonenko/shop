@@ -8,7 +8,7 @@ import com.github.sonenko.shop.depot.Depot
   */
 class ProductsTest extends Integration {
   "GET /api/products" should {
-    "respond with `list of current goods`:200 " in {
+    "respond with `list of current goods` and status `OK` " in {
       Get("/api/products") ~> route ~> check {
         status shouldEqual StatusCodes.OK
         entityAs[Depot.Answers.State] shouldEqual Depot.Answers.State(Depot.initialState)
