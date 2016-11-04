@@ -11,7 +11,7 @@ trait ProductsRoute { this: RootRoute =>
   val productsRoute: Route = pathPrefix("api" / "products") {
     pathEndOrSingleSlash {
       get {
-        complete{
+        complete {
           ask(depot, Depot.Queries.GetState).mapTo[Depot.Answer]
         }
       }
