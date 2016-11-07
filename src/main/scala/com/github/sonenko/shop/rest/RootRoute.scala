@@ -13,8 +13,8 @@ import scala.concurrent.duration._
   * @param depot - actor that serves as Depot
   */
 class RootRoute(val log: LoggingAdapter, val depot: ActorRef) extends JsonProtocol
-    with ShoppingBasketRoute with ProductsRoute {
+    with ShoppingBasketRoute with ProductsRoute with AdminRoute {
 
   implicit val timeout = Timeout(10 seconds)
-  def route = shoppingBasketRoute ~ productsRoute
+  def route = shoppingBasketRoute ~ productsRoute ~ adminRoute
 }

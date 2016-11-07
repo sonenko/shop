@@ -35,3 +35,8 @@ curl "http://localhost:7777/api/shoppingbasket" --cookie "user-session-id=88d6b5
 // List products
 curl "http://localhost:7777/api/products" | python -m json.tool
 ```
+
+#### Admin endpoints
+```
+curl "http://localhost:7777/api/admin/sessions" --user admin:pwd -i
+```
