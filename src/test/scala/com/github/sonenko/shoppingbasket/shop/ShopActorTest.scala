@@ -11,6 +11,7 @@ class ShopActorTest extends TestKit(ActorSystem("StoreTest")) with WordSpecLike 
   with MockitoSugar with DefaultTimeout with ImplicitSender with BeforeAndAfterAll {
 
   trait Scope {
+    val basketId = java.util.UUID.randomUUID()
     val depot = mock[Depot]
     var basketCreated = false
     def createFakeBasketFunc(ctx: ActorContext, depot: Depot): ActorRef = {
@@ -22,9 +23,22 @@ class ShopActorTest extends TestKit(ActorSystem("StoreTest")) with WordSpecLike 
 
   "ShopActor.Commands.CreateBasket" should {
     "execute createBasketFunc and respond with newly created basketId" in new Scope {
-      shop ! ShopActor.Commands.CreateBasket
-      expectMsgClass(classOf[ShopActor.Answers.BasketCreateSuccess])
+      shop ! ShopActor.Commands.CreateBasket(basketId)
+      expectMsg(ShopActor.Answers.BasketCreateSuccess(basketId))
       basketCreated shouldEqual true
+    }
+  }
+
+  "ShopActor.Queries.GetState" should {
+    "respond with current state(empty)" in new Scope {
+      shop ! ShopActor.Queries.GetState
+      expectMsg(ShopActor.Answers.State(Nil))
+    }
+    "respond with current state(one basket)" in new Scope {
+      shop ! ShopActor.Commands.CreateBasket(basketId)
+      expectMsg(ShopActor.Answers.BasketCreateSuccess(basketId))
+      shop ! ShopActor.Queries.GetState
+      expectMsg(ShopActor.Answers.State(List(basketId)))
     }
   }
 }

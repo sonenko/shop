@@ -1,5 +1,7 @@
 package com.github.sonenko.shoppingbasket.integration
 
+import java.util.UUID
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 
@@ -22,7 +24,7 @@ class AdminTest extends Integration {
     "respond with status OK and return empty array if good credentials" in {
       Get("/api/admin/sessions") ~> addCredentials(BasicHttpCredentials("admin", "pwd")) ~> route ~> check {
         status shouldEqual StatusCodes.OK
-        responseAs[List[String]] shouldEqual Nil
+        responseAs[List[UUID]] shouldEqual Nil
       }
     }
   }

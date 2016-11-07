@@ -31,7 +31,8 @@ class Constructor {
   val shop = new Shop(system, depot, timeout)
   val route = new RootRoute(
     log = log,
-    depot = depot
+    depot = depot,
+    shop = shop
   ).route
 
   def start(): Unit = {

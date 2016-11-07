@@ -13,7 +13,7 @@ trait AdminRoute { this: RootRoute =>
       path("sessions") {
         get {
           complete {
-            Nil
+            shop.listBaskets
           }
         }
       }
