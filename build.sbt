@@ -16,7 +16,7 @@ scalacOptions ++= List(
 )
 
 assemblyJarName in assembly := "Shop.jar"
-mainClass in assembly := Some("com.github.sonenko.shop.Main")
+mainClass in assembly := Some("com.github.sonenko.shoppingbasket.Main")
 
 resolvers ++= List(
   "Akka Snapshot Repository" at "http://repo.akka.io/snapshots/",

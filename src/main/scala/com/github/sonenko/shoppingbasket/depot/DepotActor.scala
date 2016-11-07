@@ -1,17 +1,17 @@
-package com.github.sonenko.shop.depot
+package com.github.sonenko.shoppingbasket.depot
 
 import java.net.URL
 import java.util.UUID
 import java.util.UUID.fromString
 
 import akka.actor.{Actor, Props}
-import com.github.sonenko.shop.depot.Depot._
+import com.github.sonenko.shoppingbasket.depot.DepotActor._
 import org.joda.money.{CurrencyUnit, Money}
 
 /** serves as Depot
   */
-class Depot extends Actor {
-  var state: List[Good] = Depot.initialState
+class DepotActor extends Actor {
+  var state: List[Good] = DepotActor.initialState
 
   val receive: Receive = {
     case q: Query => q match {
@@ -20,7 +20,7 @@ class Depot extends Actor {
   }
 }
 
-object Depot {
+object DepotActor {
 
   val initialState = {
     def usd(amount: Long) = Money.ofMajor(CurrencyUnit.USD, amount)
@@ -38,7 +38,7 @@ object Depot {
     )
   }
 
-  def props = Props(classOf[Depot])
+  def props = Props(classOf[DepotActor])
 
   sealed trait Query
   object Queries {

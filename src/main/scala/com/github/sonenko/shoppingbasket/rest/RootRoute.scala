@@ -1,9 +1,9 @@
-package com.github.sonenko.shop.rest
+package com.github.sonenko.shoppingbasket.rest
 
-import akka.actor.ActorRef
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.server.Directives._
 import akka.util.Timeout
+import com.github.sonenko.shoppingbasket.depot.Depot
 
 import scala.concurrent.duration._
 
@@ -12,7 +12,7 @@ import scala.concurrent.duration._
   * @param log - logger
   * @param depot - actor that serves as Depot
   */
-class RootRoute(val log: LoggingAdapter, val depot: ActorRef) extends JsonProtocol
+class RootRoute(val log: LoggingAdapter, val depot: Depot) extends JsonProtocol
     with ShoppingBasketRoute with ProductsRoute with AdminRoute {
 
   implicit val timeout = Timeout(10 seconds)

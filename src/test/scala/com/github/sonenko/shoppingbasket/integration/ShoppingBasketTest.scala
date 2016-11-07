@@ -1,10 +1,10 @@
-package com.github.sonenko.shop.integration
+package com.github.sonenko.shoppingbasket.integration
 
 import java.util.UUID
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.{Cookie, `Set-Cookie`}
-import com.github.sonenko.shop.Config
+import com.github.sonenko.shoppingbasket.Config
 
 import scala.util.Try
 /**
