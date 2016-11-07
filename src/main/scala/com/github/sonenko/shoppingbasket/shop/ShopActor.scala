@@ -10,12 +10,15 @@ class ShopActor(depot: Depot, createBasketFunc: (ActorContext, Depot) => ActorRe
   var baskets: Map[UUID, ActorRef] = Map()
 
   override def receive: Receive = {
-    case cmd: ShopActor.Command => cmd match {
-      case ShopActor.Commands.CreateBasket =>
-        val basketId = java.util.UUID.randomUUID()
+    case c: ShopActor.Command => c match {
+      case ShopActor.Commands.CreateBasket(basketId) =>
         val basket = createBasketFunc(context, depot)
         baskets = baskets + (basketId -> basket)
         sender ! ShopActor.Answers.BasketCreateSuccess(basketId)
+    }
+    case q: ShopActor.Query => q match {
+      case ShopActor.Queries.GetState =>
+        sender ! ShopActor.Answers.State(baskets.keys.toList)
     }
   }
 }
@@ -32,11 +35,17 @@ object ShopActor {
 
   sealed trait Command
   object Commands {
-    case object CreateBasket extends Command
+    case class CreateBasket(basketId: UUID) extends Command
+  }
+
+  sealed trait Query
+  object Queries {
+    case object GetState extends Query
   }
 
   sealed trait Answer
   object Answers {
     case class BasketCreateSuccess(basketId: UUID) extends Answer
+    case class State(basketIds: List[UUID]) extends Answer
   }
 }
