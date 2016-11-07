@@ -1,4 +1,4 @@
-package com.github.sonenko.shop.rest
+package com.github.sonenko.shoppingbasket.rest
 
 import java.util.UUID
 

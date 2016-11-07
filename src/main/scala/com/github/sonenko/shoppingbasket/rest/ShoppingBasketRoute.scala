@@ -1,10 +1,10 @@
-package com.github.sonenko.shop.rest
+package com.github.sonenko.shoppingbasket.rest
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.HttpCookie
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import com.github.sonenko.shop.Config
+import com.github.sonenko.shoppingbasket.Config
 
 
 trait ShoppingBasketRoute { this: RootRoute =>

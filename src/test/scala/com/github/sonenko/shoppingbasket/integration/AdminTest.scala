@@ -1,4 +1,4 @@
-package com.github.sonenko.shop.integration
+package com.github.sonenko.shoppingbasket.integration
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.BasicHttpCredentials

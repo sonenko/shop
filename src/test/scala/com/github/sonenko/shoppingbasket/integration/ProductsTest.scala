@@ -1,7 +1,7 @@
-package com.github.sonenko.shop.integration
+package com.github.sonenko.shoppingbasket.integration
 
 import akka.http.scaladsl.model.StatusCodes
-import com.github.sonenko.shop.depot.Depot
+import com.github.sonenko.shoppingbasket.depot.DepotActor
 
 /**
   * integration test for `/api/products`
@@ -11,7 +11,7 @@ class ProductsTest extends Integration {
     "respond with `list of current goods` and status `OK` " in {
       Get("/api/products") ~> route ~> check {
         status shouldEqual StatusCodes.OK
-        entityAs[Depot.Answers.State] shouldEqual Depot.Answers.State(Depot.initialState)
+        entityAs[DepotActor.Answers.State] shouldEqual DepotActor.Answers.State(DepotActor.initialState)
       }
     }
   }
