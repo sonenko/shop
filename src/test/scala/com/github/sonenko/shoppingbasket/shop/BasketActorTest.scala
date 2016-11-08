@@ -4,7 +4,7 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{DefaultTimeout, ImplicitSender, TestKit}
 import com.github.sonenko.shoppingbasket.depot.{Depot, DepotActor}
 import com.github.sonenko.shoppingbasket.shop.basket.BasketActor
-import com.github.sonenko.shoppingbasket.{AddGoodToBasketSuccess, BasketState, Busy, GoodAmountIsLowInDepotError, GoodNotFoundInDepotError, GoodRemoveFromDepotSuccess}
+import com.github.sonenko.shoppingbasket.{AddGoodToBasketSuccess, BasketState, Busy, GoodAddToDepotSuccess, GoodAmountIsLowInDepotError, GoodNotFoundInDepotError, GoodRemoveFromDepotSuccess, RemoveGoodFromBasketErrorNotFountGood, RemoveGoodFromBasketSuccess}
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
@@ -25,6 +25,14 @@ class BasketActorTest extends TestKit(ActorSystem("BasketActorTest")) with WordS
     }
 
     val basket = BasketActor.create(system, depot, stopFn)
+
+    def addGood(): Unit = {
+      basket.actor ! BasketActor.Commands.AddGood(goodId, 1)
+      expectMsg(DepotActor.Commands.TakeGood(goodId, 1))
+      val goodInBasket = good.copy(count = 1)
+      basket.actor ! GoodRemoveFromDepotSuccess(goodInBasket)
+      expectMsg(AddGoodToBasketSuccess(BasketState(List(goodInBasket))))
+    }
   }
 
   "BasketActor.Commands.AddGood" should {
@@ -39,6 +47,28 @@ class BasketActorTest extends TestKit(ActorSystem("BasketActorTest")) with WordS
       expectMsg(DepotActor.Commands.TakeGood(goodId, count))
       basket.actor ! BasketActor.Commands.AddGood(java.util.UUID.randomUUID(), count)
       expectMsg(Busy)
+    }
+  }
+
+  "BasketActor.Commands.DropGood" should {
+    "send request to Depot" in new Scope {
+      val count = 1
+      basket.actor ! BasketActor.Commands.DropGood(goodId, count)
+      expectMsg(RemoveGoodFromBasketErrorNotFountGood)
+    }
+    "send request to depot and became unavailable" in new Scope {
+      addGood()
+      basket.actor ! BasketActor.Commands.DropGood(goodId, 1)
+      expectMsg(DepotActor.Commands.PutGood(goodId, 1))
+      basket.actor ! BasketActor.Commands.DropGood(goodId, 1)
+      expectMsg(Busy)
+    }
+    "remove all goods if count more then exists" in new Scope {
+      addGood()
+      basket.actor ! BasketActor.Commands.DropGood(goodId, 10)
+      expectMsg(DepotActor.Commands.PutGood(goodId, 1))
+      basket.actor ! GoodAddToDepotSuccess(good.copy(count = 1))
+      expectMsg(RemoveGoodFromBasketSuccess(BasketState(Nil)))
     }
   }
 

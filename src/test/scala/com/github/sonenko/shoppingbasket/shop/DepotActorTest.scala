@@ -3,7 +3,7 @@ package com.github.sonenko.shoppingbasket.shop
 import akka.actor.ActorSystem
 import akka.testkit.{DefaultTimeout, ImplicitSender, TestKit}
 import com.github.sonenko.shoppingbasket.depot.DepotActor
-import com.github.sonenko.shoppingbasket.{DepotState, GoodAmountIsLowInDepotError, GoodNotFoundInDepotError, GoodRemoveFromDepotSuccess}
+import com.github.sonenko.shoppingbasket.{DepotState, GoodAddToDepotSuccess, GoodAmountIsLowInDepotError, GoodNotFoundInDepotError, GoodRemoveFromDepotSuccess}
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
@@ -42,6 +42,21 @@ class DepotActorTest extends TestKit(ActorSystem("DepotActorTest")) with WordSpe
     "replay GoodAmountIsLowInDepotError if depot does not has so alot of goods with specified Id" in new Scope {
       depotActor ! DepotActor.Commands.TakeGood(goodId, 50)
       expectMsg(GoodAmountIsLowInDepotError)
+    }
+  }
+
+  "DepotActor.Commands.PutGood" should {
+    "replay GoodAddToDepotSuccess in happy case" in new Scope { // yes only specified goods for now
+      depotActor ! DepotActor.Commands.PutGood(goodId, 3)
+      expectMsg(GoodAddToDepotSuccess(good.copy(count = 3)))
+      depotActor ! DepotActor.Commands.GetState
+      expectMsgPF() {
+        case DepotState(goods) if goods.find(_.id == goodId).head.count == initialCount + 3 => ()
+      }
+    }
+    "replay GoodNotFoundInDepotError if depot does not contain good with specified Id" in new Scope {
+      depotActor ! DepotActor.Commands.PutGood(java.util.UUID.randomUUID(), 1)
+      expectMsg(GoodNotFoundInDepotError)
     }
   }
 }

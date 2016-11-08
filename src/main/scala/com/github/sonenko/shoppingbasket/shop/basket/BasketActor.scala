@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, PoisonPill, Props}
 import com.github.sonenko.shoppingbasket._
-import com.github.sonenko.shoppingbasket.depot.{Depot, DepotActor}
+import com.github.sonenko.shoppingbasket.depot.{Depot, DepotActor, Good}
 
 class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with ActorLogging {
   var state = BasketState(Nil)
@@ -19,6 +19,12 @@ class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with Act
         context.become(busy(sender))
       case BasketActor.Commands.GetState =>
         sender ! state
+      case BasketActor.Commands.DropGood(goodId, count) =>
+        ifGoodExistsInBasket(goodId){ goodInBasket =>
+          val goodsToRemoveCount = if (goodInBasket.count > count) goodInBasket.count - count else goodInBasket.count
+          depot.actor ! DepotActor.Commands.PutGood(goodId, goodsToRemoveCount)
+          context.become(busy(sender))
+        }
     }
   }
 
@@ -44,9 +50,28 @@ class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with Act
     case res@(GoodNotFoundInDepotError | GoodAmountIsLowInDepotError) =>
       sndr ! res
       context.unbecome()
+    case GoodAddToDepotSuccess(removedGood) =>
+      val goodId = removedGood.id
+      val goodToRemove = state.goods.find(_.id == goodId).head
+      if (goodToRemove.count == removedGood.count) {
+        state = BasketState(state.goods.filter(_.id != goodId))
+      } else {
+        state = BasketState(state.goods.map {
+          case goodInBasket @ Good(`goodId`, _, _, oldCount, _) => goodInBasket.copy(count = oldCount - removedGood.count)
+          case x => x
+        })
+      }
+      sndr ! RemoveGoodFromBasketSuccess(state)
+      context.unbecome()
     case _: BasketActor.Command =>
       sender ! Busy
   }
+
+  def ifGoodExistsInBasket(goodId: UUID)(fn: Good => Unit): Unit = state.goods.find(_.id == goodId) match {
+    case None => sender ! RemoveGoodFromBasketErrorNotFountGood
+    case Some(goodInBasket) => fn(goodInBasket)
+  }
+
 
   def beforeStop() = {
     log.error("Implement me, put goods back to depot")
@@ -61,13 +86,10 @@ object BasketActor {
   sealed trait Command
 
   object Commands {
-
     case object ByeBye extends Command
-
     case class AddGood(goodId: UUID, count: Int) extends Command
-
+    case class DropGood(goodId: UUID, count: Int) extends Command
     case object GetState extends Command
-
   }
 
 }
