@@ -9,4 +9,5 @@ object Config {
   val cookieNameForSession = cfg.getString("shoppingbasket.cookieNameForSession")
   val adminName = cfg.getString("shoppingbasket.admin.name")
   val adminPassword = cfg.getString("shoppingbasket.admin.password")
+  val timeout = cfg.getInt("shoppingbasket.timeoutInSec")
 }

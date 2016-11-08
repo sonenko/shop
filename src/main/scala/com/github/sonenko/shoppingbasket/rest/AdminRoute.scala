@@ -1,9 +1,10 @@
-package com.github.sonenko.shoppingbasket.rest
+package com.github.sonenko.shoppingbasket
+package rest
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.Credentials
-import com.github.sonenko.shoppingbasket.Config
+import com.github.sonenko.shoppingbasket.shop.ShopActor
 
 /** rest routes for '/api/products'
   */
@@ -13,7 +14,7 @@ trait AdminRoute { this: RootRoute =>
       path("sessions") {
         get {
           complete {
-            shop.listBaskets
+            inquire(shop.actor, ShopActor.Commands.GetState)
           }
         }
       }

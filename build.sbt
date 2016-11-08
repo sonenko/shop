@@ -12,7 +12,9 @@ scalacOptions ++= List(
   "-feature",
   "-language:postfixOps",
   "-deprecation",
-  "-Ywarn-dead-code"
+  "-Ywarn-dead-code",
+  "-Xfatal-warnings",
+  "-unchecked"
 )
 
 assemblyJarName in assembly := "Shop.jar"

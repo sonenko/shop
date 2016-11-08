@@ -30,3 +30,5 @@ trait JsonProtocol extends DefaultJsonFormats with Json4sSupport {
   implicit val serialization = Serialization
   implicit val formats = DefaultFormats + ext.UUIDSerializer + ext.URLSerializer + JodaMoneySerializer + UUIDKeyJSonSerializer
 }
+
+case class AddGood(goodId: UUID, count: Int) {require(count >= 1)}
