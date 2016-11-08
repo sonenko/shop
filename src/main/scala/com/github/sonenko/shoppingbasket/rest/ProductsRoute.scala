@@ -7,7 +7,8 @@ import com.github.sonenko.shoppingbasket.depot.DepotActor
 
 /** rest routes for '/api/products'
   */
-trait ProductsRoute { this: RootRoute =>
+trait ProductsRoute {
+  this: RootRoute =>
   val productsRoute: Route = pathPrefix("api" / "products") {
     pathEndOrSingleSlash {
       get {

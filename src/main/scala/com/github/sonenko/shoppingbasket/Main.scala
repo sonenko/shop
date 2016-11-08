@@ -22,6 +22,7 @@ class Constructor {
   implicit val materializer = ActorMaterializer()
 
   import system.dispatcher
+
   val log = Logging.getLogger(system, this)
   val depot = DepotActor.create(system)
   val shop = ShopActor.create(system, depot)

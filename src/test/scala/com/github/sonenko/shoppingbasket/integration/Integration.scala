@@ -10,8 +10,10 @@ import org.scalatest.{Matchers, WordSpec}
 /** trait to mix for writing integration tests, it mock nothing, but simply run routes, very close to end2end
   */
 trait Integration extends WordSpec with Matchers with ScalatestRouteTest with JsonProtocol {
+
   trait Scope {
     val route: Route = Route.seal(new Constructor().route)
   }
+
   def jsonEntity(contents: String) = HttpEntity(ContentTypes.`application/json`, contents)
 }

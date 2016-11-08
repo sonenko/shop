@@ -15,7 +15,7 @@ class AdminTest extends Integration {
         status shouldEqual StatusCodes.Unauthorized
       }
     }
-    "respond with status `Unauthorized` if no credentials is wrong" in new Scope  {
+    "respond with status `Unauthorized` if no credentials is wrong" in new Scope {
       Get("/api/admin/sessions") ~> addCredentials(BasicHttpCredentials("admin", "wrongPass")) ~> route ~> check {
         status shouldEqual StatusCodes.Unauthorized
       }
