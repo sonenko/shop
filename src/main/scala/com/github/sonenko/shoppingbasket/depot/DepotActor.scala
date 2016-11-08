@@ -4,13 +4,13 @@ import java.net.URL
 import java.util.UUID
 import java.util.UUID.fromString
 
-import akka.actor.{Actor, ActorRef, ActorRefFactory, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, Props}
 import com.github.sonenko.shoppingbasket._
 import org.joda.money.{CurrencyUnit, Money}
 
 /** serves as Depot
   */
-class DepotActor extends Actor {
+class DepotActor extends Actor with ActorLogging {
   var state: List[Good] = DepotActor.initialState
 
   val receive: Receive = {
@@ -18,19 +18,37 @@ class DepotActor extends Actor {
       case DepotActor.Commands.GetState =>
         sender ! DepotState(state)
       case DepotActor.Commands.TakeGood(goodId, count) =>
-        state.find(_.id == goodId) match {
-          case None => sender ! GoodNotFoundInDepotError
-          case Some(good) =>
-            if (good.count < count) sender ! GoodAmountIsLowInDepotError
-            else {
-              state = state.map { good =>
-                if (good.id == goodId) good.copy(count = good.count - count)
-                else good
-              }
-              sender ! GoodRemoveFromDepotSuccess(good.copy(count = count))
+        ifGoodExists(goodId) { good =>
+          ifGoodCountEnough(good, count){
+            state = state.map {
+              case good: Good if good.id == goodId => good.copy(count = good.count - count)
+              case x => x
             }
+            sender ! GoodRemoveFromDepotSuccess(good.copy(count = count))
+          }
+        }
+      case m@ DepotActor.Commands.PutGood(goodId, count) =>
+        ifGoodExists(goodId) { good =>
+          state = state.map{
+            case goodInDepot @ Good(`goodId`, _, _, oldCount, _) =>
+              goodInDepot.copy(count = oldCount + count)
+            case x => x
+          }
+          sender ! GoodAddToDepotSuccess(good.copy(count = count))
         }
     }
+  }
+
+  def ifGoodExists(goodId: UUID)(fn: Good => Unit): Unit = {
+    state.find(_.id == goodId) match {
+      case None =>  sender ! GoodNotFoundInDepotError
+      case Some(good) => fn(good)
+    }
+  }
+
+  def ifGoodCountEnough(good: Good, count: Int)(fn: => Unit): Unit = {
+    if (good.count >= count) fn
+    else sender ! GoodAmountIsLowInDepotError
   }
 }
 
@@ -59,11 +77,9 @@ object DepotActor {
   trait Command
 
   object Commands {
-
     case class TakeGood(goodId: UUID, count: Int) extends Command
-
+    case class PutGood(goodId: UUID, count: Int) extends Command
     case object GetState extends Command
-
   }
 
 }

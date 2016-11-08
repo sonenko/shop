@@ -28,9 +28,11 @@ class ShopActor(depot: Depot, createBasketFunc: (ActorRefFactory, Depot) => Bask
     }
   }
 
-  def ifBasketExists(basketId: UUID)(func: Basket => Unit): Unit = baskets.get(basketId) match {
-    case Some(basketActor) => func(basketActor)
-    case None => sender ! BasketNotFoundError
+  def ifBasketExists(basketId: UUID)(func: Basket => Unit): Unit = {
+    baskets.get(basketId) match {
+      case Some(basketActor) => func(basketActor)
+      case None => sender ! BasketNotFoundError
+    }
   }
 
   def ifBasketNoBasket(basketId: UUID)(func: => Unit): Unit = baskets.get(basketId) match {
@@ -60,15 +62,10 @@ object ShopActor {
   sealed trait Command
 
   object Commands {
-
     case class DropBasket(basketId: UUID) extends Command
-
     case class ToBasket(basketId: UUID, basketActor: BasketActor.Command, forceCreate: Boolean) extends Command
-
     case object GetState extends Command
-
   }
-
 }
 
 trait Shop {

@@ -26,7 +26,8 @@ trait ShoppingBasketRoute {
               false
             ))
           }
-        } ~ post {
+        } ~
+        post {
           entity(as[AddGood]) { addGood =>
             complete {
               inquire(shop.actor, ShopActor.Commands.ToBasket(
@@ -36,11 +37,22 @@ trait ShoppingBasketRoute {
               ))
             }
           }
+        } ~
+        delete {
+          entity(as[DropGood]) { dropGood =>
+            complete {
+              inquire(shop.actor, ShopActor.Commands.ToBasket(
+                basketId,
+                BasketActor.Commands.DropGood(dropGood.goodId, dropGood.count),
+                false
+              ))
+            }
+          }
         }
       }
     } ~
-      setCookie(cook) { ctx =>
-        redirect(ctx.request.uri, StatusCodes.PermanentRedirect).apply(ctx)
-      }
+    setCookie(cook) { ctx =>
+      redirect(ctx.request.uri, StatusCodes.PermanentRedirect).apply(ctx)
+    }
   }
 }

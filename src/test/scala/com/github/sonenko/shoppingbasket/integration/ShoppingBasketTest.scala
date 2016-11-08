@@ -26,11 +26,10 @@ class ShoppingBasketTest extends Integration {
         Try(UUID.fromString(header[`Set-Cookie`].get.cookie.value)).isSuccess shouldEqual true
       }
     }
-    "return list of products in basket if request contain cookie" in new Scope {
+    "return BadRequest if request contain cookie but no products" in new Scope {
       val cookeId = fetchCookieId(route)
       Get("/api/shoppingbasket") ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
-        status shouldEqual StatusCodes.OK
-        responseAs[BasketState] shouldEqual BasketState(Nil)
+        status shouldEqual StatusCodes.BadRequest
       }
     }
   }
@@ -69,6 +68,29 @@ class ShoppingBasketTest extends Integration {
         responseAs[BasketState] shouldEqual BasketState(List(good.copy(count = 2)))
       }
 
+    }
+  }
+
+  "DELETE /api/shoppingbasket" should {
+    "respond BadRequest if incorrect productId" in new Scope {
+      val cookeId = fetchCookieId(route)
+      val body = jsonEntity(s"""{"goodId": "${java.util.UUID.randomUUID()}", "count": 2}""")
+      Delete("/api/shoppingbasket", body) ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
+        status shouldEqual StatusCodes.BadRequest
+      }
+    }
+    "respond with status OK and updated state if goods deleted" in new Scope {
+      val cookeId = fetchCookieId(route)
+      val body = jsonEntity(s"""{"goodId": "$goodId", "count": 2}""")
+      Post("/api/shoppingbasket", body) ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
+        status shouldEqual StatusCodes.Created
+        responseAs[BasketState] shouldEqual BasketState(List(good.copy(count = 2)))
+      }
+
+      val bodyDel = jsonEntity(s"""{"goodId": "$goodId", "count": 2}""")
+      Delete("/api/shoppingbasket", bodyDel) ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+      }
     }
   }
 

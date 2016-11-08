@@ -35,3 +35,6 @@ trait JsonProtocol extends DefaultJsonFormats with Json4sSupport {
 case class AddGood(goodId: UUID, count: Int) {
   require(count >= 1)
 }
+case class DropGood(goodId: UUID, count: Int) {
+  require(count >= 1)
+}
