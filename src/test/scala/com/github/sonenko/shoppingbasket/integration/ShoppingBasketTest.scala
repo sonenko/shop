@@ -9,6 +9,7 @@ import com.github.sonenko.shoppingbasket.depot.DepotActor
 import com.github.sonenko.shoppingbasket.{BasketState, Config}
 
 import scala.util.Try
+
 /**
   * integration test for `/api/shoppingbasket`
   */
@@ -29,7 +30,7 @@ class ShoppingBasketTest extends Integration {
       val cookeId = fetchCookieId(route)
       Get("/api/shoppingbasket") ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
         status shouldEqual StatusCodes.OK
-        responseAs[String] shouldEqual "[]"
+        responseAs[BasketState] shouldEqual BasketState(Nil)
       }
     }
   }
@@ -56,13 +57,18 @@ class ShoppingBasketTest extends Integration {
         status shouldEqual StatusCodes.BadRequest
       }
     }
-    "respond with status Created and return current state of basket" in new Scope {
+    "respond with status Created and return current state of basket, and update state" in new Scope {
       val cookeId = fetchCookieId(route)
       val body = jsonEntity(s"""{"goodId": "$goodId", "count": 2}""")
       Post("/api/shoppingbasket", body) ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
         status shouldEqual StatusCodes.Created
         responseAs[BasketState] shouldEqual BasketState(List(good.copy(count = 2)))
       }
+      Get("/api/shoppingbasket") ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+        responseAs[BasketState] shouldEqual BasketState(List(good.copy(count = 2)))
+      }
+
     }
   }
 

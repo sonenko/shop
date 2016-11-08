@@ -18,10 +18,12 @@ class BasketActorTest extends TestKit(ActorSystem("BasketActorTest")) with WordS
     val good = DepotActor.initialState.head
     val goodId = good.id
     var stopFunctionExecuted = false
+
     def stopFn(act: ActorRef): Unit = {
       stopFunctionExecuted = true
       self ! BasketActor.Commands.ByeBye
     }
+
     val basket = BasketActor.create(system, depot, stopFn)
   }
 
@@ -39,6 +41,21 @@ class BasketActorTest extends TestKit(ActorSystem("BasketActorTest")) with WordS
       expectMsg(Busy)
     }
   }
+
+  "BasketActor.Commands.GetState" should {
+    "replay current state" in new Scope {
+      basket.actor ! BasketActor.Commands.GetState
+      expectMsg(BasketState(Nil))
+    }
+    "replay with current state when busy" in new Scope {
+      basket.actor ! BasketActor.Commands.AddGood(goodId, 1) // to became busy
+      expectMsg(DepotActor.Commands.TakeGood(goodId, 1))
+      basket.actor ! BasketActor.Commands.GetState // still busy
+      expectMsg(BasketState(Nil))
+    }
+  }
+
+  // busy
   "when busy BasketActor.Commands.ByeBye" should {
     "execute stop function" in new Scope {
       basket.actor ! BasketActor.Commands.AddGood(goodId, 1)

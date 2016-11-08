@@ -17,6 +17,8 @@ class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with Act
       case BasketActor.Commands.AddGood(goodId, count) =>
         depot.actor ! DepotActor.Commands.TakeGood(goodId, count)
         context.become(busy(sender))
+      case BasketActor.Commands.GetState =>
+        sender ! state
     }
   }
 
@@ -24,7 +26,9 @@ class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with Act
     case BasketActor.Commands.ByeBye =>
       beforeStop()
       stopSn(self)
-    case res @ GoodRemoveFromDepotSuccess(goodFromDepot) =>
+    case BasketActor.Commands.GetState =>
+      sender ! state
+    case res@GoodRemoveFromDepotSuccess(goodFromDepot) =>
       state.goods.find(_.id == goodFromDepot.id) match {
         case None =>
           state = BasketState(goodFromDepot :: state.goods)
@@ -37,7 +41,7 @@ class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with Act
       }
       sndr ! AddGoodToBasketSuccess(state)
       context.unbecome()
-    case res @(GoodNotFoundInDepotError | GoodAmountIsLowInDepotError) =>
+    case res@(GoodNotFoundInDepotError | GoodAmountIsLowInDepotError) =>
       sndr ! res
       context.unbecome()
     case _: BasketActor.Command =>
@@ -55,10 +59,17 @@ object BasketActor {
   }
 
   sealed trait Command
+
   object Commands {
+
     case object ByeBye extends Command
+
     case class AddGood(goodId: UUID, count: Int) extends Command
+
+    case object GetState extends Command
+
   }
+
 }
 
 trait Basket {

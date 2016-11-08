@@ -9,7 +9,8 @@ import com.github.sonenko.shoppingbasket.shop.ShopActor
 import com.github.sonenko.shoppingbasket.shop.basket.BasketActor
 
 
-trait ShoppingBasketRoute { this: RootRoute =>
+trait ShoppingBasketRoute {
+  this: RootRoute =>
 
   def cook = HttpCookie(Config.cookieNameForSession, java.util.UUID.randomUUID().toString)
 
@@ -19,7 +20,11 @@ trait ShoppingBasketRoute { this: RootRoute =>
       pathEndOrSingleSlash {
         get {
           complete {
-            "[]"
+            inquire(shop.actor, ShopActor.Commands.ToBasket(
+              basketId,
+              BasketActor.Commands.GetState,
+              false
+            ))
           }
         } ~ post {
           entity(as[AddGood]) { addGood =>
@@ -34,8 +39,8 @@ trait ShoppingBasketRoute { this: RootRoute =>
         }
       }
     } ~
-    setCookie(cook) { ctx =>
-      redirect(ctx.request.uri, StatusCodes.PermanentRedirect).apply(ctx)
-    }
+      setCookie(cook) { ctx =>
+        redirect(ctx.request.uri, StatusCodes.PermanentRedirect).apply(ctx)
+      }
   }
 }

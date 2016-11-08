@@ -11,7 +11,8 @@ import org.json4s.{CustomKeySerializer, CustomSerializer, DefaultFormats, Defaul
 /** Contains implicits convertions case classes to JSON and conversely
   */
 trait JsonProtocol extends DefaultJsonFormats with Json4sSupport {
-  object JodaMoneySerializer extends CustomSerializer[Money](format => ({
+
+  object JodaMoneySerializer extends CustomSerializer[Money](format => ( {
     case JString(money) =>
       val Array(ammountStr, currencyStr) = money.split(' ')
       val ammount = ammountStr.toDouble
@@ -31,4 +32,6 @@ trait JsonProtocol extends DefaultJsonFormats with Json4sSupport {
   implicit val formats = DefaultFormats + ext.UUIDSerializer + ext.URLSerializer + JodaMoneySerializer + UUIDKeyJSonSerializer
 }
 
-case class AddGood(goodId: UUID, count: Int) {require(count >= 1)}
+case class AddGood(goodId: UUID, count: Int) {
+  require(count >= 1)
+}

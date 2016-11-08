@@ -20,7 +20,7 @@ class ShopActor(depot: Depot, createBasketFunc: (ActorRefFactory, Depot) => Bask
         }
       case ShopActor.Commands.ToBasket(basketId, cmd, forceCreate) =>
         val fn = if (forceCreate) forceWithBasket _ else ifBasketExists _
-        fn(basketId){ basket =>
+        fn(basketId) { basket =>
           basket.actor.tell(cmd, sender)
         }
       case ShopActor.Commands.GetState =>
@@ -58,11 +58,17 @@ object ShopActor {
     BasketActor.create(ctx, depot)
 
   sealed trait Command
+
   object Commands {
+
     case class DropBasket(basketId: UUID) extends Command
+
     case class ToBasket(basketId: UUID, basketActor: BasketActor.Command, forceCreate: Boolean) extends Command
+
     case object GetState extends Command
+
   }
+
 }
 
 trait Shop {

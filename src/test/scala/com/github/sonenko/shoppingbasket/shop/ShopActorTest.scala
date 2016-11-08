@@ -16,12 +16,14 @@ class ShopActorTest extends TestKit(ActorSystem("ShopActorTest")) with WordSpecL
     val basketId = java.util.UUID.randomUUID()
     val depot = mock[Depot]
     var basketCreated = false
+
     def createFakeBasketFunc(ctx: ActorRefFactory, depot: Depot): Basket = {
       basketCreated = true
       new Basket {
         override val actor = self
       }
     }
+
     val shop = ShopActor.create(system, depot, createFakeBasketFunc)
   }
 
