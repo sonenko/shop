@@ -4,8 +4,8 @@ import java.net.URL
 import java.util.UUID
 import java.util.UUID.fromString
 
-import akka.actor.{Actor, Props}
-import com.github.sonenko.shoppingbasket.depot.DepotActor._
+import akka.actor.{Actor, ActorRef, ActorRefFactory, Props}
+import com.github.sonenko.shoppingbasket._
 import org.joda.money.{CurrencyUnit, Money}
 
 /** serves as Depot
@@ -14,13 +14,31 @@ class DepotActor extends Actor {
   var state: List[Good] = DepotActor.initialState
 
   val receive: Receive = {
-    case q: Query => q match {
-      case Queries.GetState => sender ! Answers.State(state)
+    case c: DepotActor.Command => c match {
+      case DepotActor.Commands.GetState =>
+        sender ! DepotState(state)
+      case DepotActor.Commands.TakeGood(goodId, count) =>
+        state.find(_.id == goodId) match {
+          case None => sender ! GoodNotFoundInDepotError
+          case Some(good) =>
+            if (good.count < count) sender ! GoodAmountIsLowInDepotError
+            else {
+              state = state.map{ good =>
+                if (good.id == goodId) good.copy(count = good.count - count)
+                else good
+              }
+              sender ! GoodRemoveFromDepotSuccess(good.copy(count = count))
+            }
+        }
     }
   }
 }
 
 object DepotActor {
+
+  def create(system: ActorRefFactory) = new Depot {
+    override val actor = system.actorOf(Props(classOf[DepotActor]))
+  }
 
   val initialState = {
     def usd(amount: Long) = Money.ofMajor(CurrencyUnit.USD, amount)
@@ -38,17 +56,15 @@ object DepotActor {
     )
   }
 
-  def props = Props(classOf[DepotActor])
-
-  sealed trait Query
-  object Queries {
-    case object GetState extends Query
+  trait Command
+  object Commands {
+    case class TakeGood(goodId: UUID, count: Int) extends Command
+    case object GetState extends Command
   }
+}
 
-  sealed trait Answer
-  object Answers {
-    case class State(goods: List[Good]) extends Answer
-  }
+trait Depot {
+  val actor: ActorRef
 }
 
 case class Good(id: UUID, name: String, price: Money, count: Int, image: URL)
