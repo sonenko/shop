@@ -5,26 +5,40 @@ import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, ActorRefFactory, Props}
 import com.github.sonenko.shoppingbasket.depot.Depot
+import com.github.sonenko.shoppingbasket.shop.ShopActor.Commands.ExpireBaskets
+import com.github.sonenko.shoppingbasket.shop.basket.BasketActor.Commands.ByeBye
 import com.github.sonenko.shoppingbasket.shop.basket.{Basket, BasketActor}
+import org.joda.time.DateTime
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 class ShopActor(depot: Depot, createBasketFunc: (ActorRefFactory, Depot) => Basket) extends Actor {
   var baskets: Map[UUID, Basket] = Map()
+  val expire = Config.expireBasketsEverySeconds
+
+  context.system.scheduler.schedule(expire seconds, expire seconds)(self ! ShopActor.Commands.ExpireBaskets)
 
   override def receive: Receive = {
     case c: ShopActor.Command => c match {
       case ShopActor.Commands.DropBasket(basketId) =>
         ifBasketExists(basketId) { basket =>
-          basket.actor ! BasketActor.Commands.ByeBye
+          basket.actor ! BasketActor.Commands.ByeBye(false)
           baskets -= basketId
           sender ! BasketDropSuccess
         }
       case ShopActor.Commands.ToBasket(basketId, cmd, forceCreate) =>
+        updateBasketUpdatedAt(basketId)
         val fn = if (forceCreate) forceWithBasket _ else ifBasketExists _
         fn(basketId) { basket =>
           basket.actor.tell(cmd, sender)
         }
       case ShopActor.Commands.GetState =>
         sender ! ShopState(baskets.keys.toList)
+      case ExpireBaskets =>
+        val (newBaskets, toEraseBaskets) = baskets.partition(_._2.updatedAt.plusSeconds(expire).isAfter(DateTime.now()))
+        baskets = newBaskets
+        toEraseBaskets.foreach(x => x._2.actor ! ByeBye(false))
     }
   }
 
@@ -47,6 +61,13 @@ class ShopActor(depot: Depot, createBasketFunc: (ActorRefFactory, Depot) => Bask
       baskets += basketId -> basket
       func(basket)
   }
+
+  def updateBasketUpdatedAt(basketId: UUID): Unit = {
+    baskets = baskets.map {
+      case (`basketId`, bask) => basketId -> bask.updated
+      case x => x
+    }
+  }
 }
 
 object ShopActor {
@@ -65,6 +86,7 @@ object ShopActor {
     case class DropBasket(basketId: UUID) extends Command
     case class ToBasket(basketId: UUID, basketActor: BasketActor.Command, forceCreate: Boolean) extends Command
     case object GetState extends Command
+    case object ExpireBaskets extends Command
   }
 }
 

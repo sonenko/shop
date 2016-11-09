@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.{Cookie, `Set-Cookie`}
 import akka.http.scaladsl.server.Route
 import com.github.sonenko.shoppingbasket.depot.DepotActor
-import com.github.sonenko.shoppingbasket.{BasketState, Config}
+import com.github.sonenko.shoppingbasket.{BasketState, Config, DepotState}
 
 import scala.util.Try
 
@@ -67,7 +67,6 @@ class ShoppingBasketTest extends Integration {
         status shouldEqual StatusCodes.OK
         responseAs[BasketState] shouldEqual BasketState(List(good.copy(count = 2)))
       }
-
     }
   }
 
@@ -91,6 +90,24 @@ class ShoppingBasketTest extends Integration {
       Delete("/api/shoppingbasket", bodyDel) ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
         status shouldEqual StatusCodes.OK
       }
+    }
+  }
+
+  "After session expiration goods should be placed back to depot" in new Scope {
+    val cookeId = fetchCookieId(route)
+    val body = jsonEntity(s"""{"goodId": "$goodId", "count": 2}""")
+    Post("/api/shoppingbasket", body) ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
+      status shouldEqual StatusCodes.Created
+      responseAs[BasketState] shouldEqual BasketState(List(good.copy(count = 2)))
+    }
+    Get("/api/products") ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      entityAs[DepotState] shouldNot equal(DepotState(DepotActor.initialState))
+    }
+    Thread.sleep(3000)
+    Get("/api/products") ~> route ~> check {
+      status shouldEqual StatusCodes.OK
+      entityAs[DepotState] shouldEqual DepotState(DepotActor.initialState)
     }
   }
 

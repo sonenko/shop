@@ -33,8 +33,8 @@ class ShopActorTest extends TestKit(ActorSystem("ShopActorTest")) with WordSpecL
       expectMsg(ShopState(Nil))
     }
     "respond with current state(one basket)" in new Scope {
-      shop.actor ! ShopActor.Commands.ToBasket(basketId, BasketActor.Commands.ByeBye, true) // create basket implicitly
-      expectMsg(BasketActor.Commands.ByeBye)
+      shop.actor ! ShopActor.Commands.ToBasket(basketId, BasketActor.Commands.ByeBye(false), true) // create basket implicitly
+      expectMsg(BasketActor.Commands.ByeBye(false))
       shop.actor ! ShopActor.Commands.GetState
       expectMsg(ShopState(List(basketId)))
     }
@@ -46,10 +46,10 @@ class ShopActorTest extends TestKit(ActorSystem("ShopActorTest")) with WordSpecL
       expectMsg(BasketNotFoundError)
     }
     "send ByeBye to Basket and respond with ShopActor.Answers.BasketDropSuccess and remove actor from basket" in new Scope {
-      shop.actor ! ShopActor.Commands.ToBasket(basketId, BasketActor.Commands.ByeBye, true) // create basket implicitly
-      expectMsg(BasketActor.Commands.ByeBye)
+      shop.actor ! ShopActor.Commands.ToBasket(basketId, BasketActor.Commands.ByeBye(false), true) // create basket implicitly
+      expectMsg(BasketActor.Commands.ByeBye(false))
       shop.actor ! ShopActor.Commands.DropBasket(basketId)
-      expectMsg(BasketActor.Commands.ByeBye)
+      expectMsg(BasketActor.Commands.ByeBye(false))
       expectMsg(BasketDropSuccess)
       shop.actor ! ShopActor.Commands.GetState
       expectMsg(ShopState(Nil))
@@ -58,12 +58,12 @@ class ShopActorTest extends TestKit(ActorSystem("ShopActorTest")) with WordSpecL
 
   "ShopActor.Commands.ToBasket" should {
     "respond BasketNotFoundError if the is no basket with specified ID" in new Scope {
-      shop.actor ! ShopActor.Commands.ToBasket(java.util.UUID.randomUUID(), BasketActor.Commands.ByeBye, false)
+      shop.actor ! ShopActor.Commands.ToBasket(java.util.UUID.randomUUID(), BasketActor.Commands.ByeBye(false), false)
       expectMsg(BasketNotFoundError)
     }
     "forward message to basket" in new Scope {
-      shop.actor ! ShopActor.Commands.ToBasket(basketId, BasketActor.Commands.ByeBye, true) // create basket implicitly
-      expectMsg(BasketActor.Commands.ByeBye)
+      shop.actor ! ShopActor.Commands.ToBasket(basketId, BasketActor.Commands.ByeBye(false), true) // create basket implicitly
+      expectMsg(BasketActor.Commands.ByeBye(false))
     }
   }
 }

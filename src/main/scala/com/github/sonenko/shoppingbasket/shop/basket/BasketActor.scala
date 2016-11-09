@@ -5,14 +5,15 @@ import java.util.UUID
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, PoisonPill, Props}
 import com.github.sonenko.shoppingbasket._
 import com.github.sonenko.shoppingbasket.depot.{Depot, DepotActor, Good}
+import org.joda.time.DateTime
 
 class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with ActorLogging {
   var state = BasketState(Nil)
 
   override def receive: Receive = {
     case c: BasketActor.Command => c match {
-      case BasketActor.Commands.ByeBye =>
-        beforeStop()
+      case BasketActor.Commands.ByeBye(putGoodsBack) =>
+        beforeStop(putGoodsBack)
         stopSn(self)
       case BasketActor.Commands.AddGood(goodId, count) =>
         depot.actor ! DepotActor.Commands.TakeGood(goodId, count)
@@ -29,8 +30,10 @@ class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with Act
   }
 
   def busy(sndr: ActorRef): Receive = {
-    case BasketActor.Commands.ByeBye =>
-      beforeStop()
+    // FIXME this is source of problem
+    // it is possible that we purchase in this moment
+    case BasketActor.Commands.ByeBye(putGoodsBack) =>
+      beforeStop(putGoodsBack)
       stopSn(self)
     case BasketActor.Commands.GetState =>
       sender ! state
@@ -72,9 +75,10 @@ class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with Act
     case Some(goodInBasket) => fn(goodInBasket)
   }
 
-
-  def beforeStop() = {
-    log.error("Implement me, put goods back to depot")
+  def beforeStop(putGoodsBack: Boolean) = {
+    state.goods.foreach(good => {
+      depot.actor ! DepotActor.Commands.PutGood(good.id, good.count, false)
+    })
   }
 }
 
@@ -86,14 +90,17 @@ object BasketActor {
   sealed trait Command
 
   object Commands {
-    case object ByeBye extends Command
+    case class ByeBye(putGoodsBack: Boolean) extends Command
     case class AddGood(goodId: UUID, count: Int) extends Command
     case class DropGood(goodId: UUID, count: Int) extends Command
     case object GetState extends Command
   }
-
 }
 
 trait Basket {
   val actor: ActorRef
+  val updatedAt: DateTime = DateTime.now()
+  def updated = new Basket{
+    override val actor = Basket.this.actor
+  }
 }
