@@ -22,9 +22,9 @@ class BasketManagerActor(stock: Stock, createBasketFunc: (ActorRefFactory, Stock
 
   override def receive: Receive = {
     case c: Command => c match {
-      case DropBasket(basketId) =>
+      case DropBasket(basketId, putToStock) =>
         ifBasketExists(basketId) { basket =>
-          basket.actor ! BasketActor.Commands.ByeBye(true)
+          basket.actor ! ByeBye(putToStock)
           baskets -= basketId
           sender ! BasketDropSuccess
         }
@@ -40,12 +40,6 @@ class BasketManagerActor(stock: Stock, createBasketFunc: (ActorRefFactory, Stock
         val (newBaskets, toEraseBaskets) = baskets.partition(_._2.updatedAt.plusSeconds(expire).isAfter(DateTime.now()))
         baskets = newBaskets
         toEraseBaskets.foreach(x => x._2.actor ! ByeBye(true))
-      case Buy(basketId) =>
-        ifBasketExists(basketId) { basket =>
-          baskets -= basketId
-          basket.actor ! ByeBye(false)
-          sender ! BuySuccess
-        }
     }
   }
 
@@ -90,11 +84,10 @@ object BasketManagerActor {
   sealed trait Command
 
   object Commands {
-    case class DropBasket(basketId: UUID) extends Command
+    case class DropBasket(basketId: UUID, putItemsToStock: Boolean = true) extends Command
     case class ToBasket(basketId: UUID, basketActor: BasketActor.Command, forceCreate: Boolean) extends Command
     case object GetState extends Command
     case object ExpireBaskets extends Command
-    case class Buy(basketId: UUID) extends Command
   }
 }
 

@@ -1,5 +1,6 @@
 package com.github.sonenko.shoppingbasket.integration
 
+import akka.http.scaladsl.model.headers.`Set-Cookie`
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -16,4 +17,12 @@ trait Integration extends WordSpec with Matchers with ScalatestRouteTest with Js
   }
 
   def jsonEntity(contents: String) = HttpEntity(ContentTypes.`application/json`, contents)
+
+  def fetchCookieId(route: Route): String = {
+    var res: String = ""
+    Get("/api/shoppingbasket") ~> route ~> check {
+      res = header[`Set-Cookie`].get.cookie.value
+    }
+    res
+  }
 }

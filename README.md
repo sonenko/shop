@@ -47,5 +47,10 @@ curl "http://localhost:7777/api/products" | python -m json.tool
 
 #### Admin endpoints
 ```
-curl "http://localhost:7777/api/admin/sessions" --user admin:pwd -i
+// list baskets ids
+curl "http://localhost:7777/api/admin/baskets" --user admin:pwd -i
+// show basket state
+curl "http://localhost:7777/api/admin/baskets/88d6b5b0-8593-4b26-8298-62a1aa41d4c1" --user admin:pwd -i
+// delete basket
+curl -XDELETE "http://localhost:7777/api/admin/baskets/88d6b5b0-8593-4b26-8298-62a1aa41d4c1" --user admin:pwd -i
 ```
