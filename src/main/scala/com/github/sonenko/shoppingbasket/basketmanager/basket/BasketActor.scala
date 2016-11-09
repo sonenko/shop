@@ -1,12 +1,12 @@
-package com.github.sonenko.shoppingbasket.shop.basket
+package com.github.sonenko.shoppingbasket.basketmanager.basket
 
 import java.util.UUID
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, PoisonPill, Props}
 import com.github.sonenko.shoppingbasket._
-import com.github.sonenko.shoppingbasket.stock.{Stock, StockActor, Good}
-import com.github.sonenko.shoppingbasket.shop.basket.BasketActor.Commands._
-import com.github.sonenko.shoppingbasket.shop.basket.BasketActor._
+import com.github.sonenko.shoppingbasket.basketmanager.basket.BasketActor.Commands._
+import com.github.sonenko.shoppingbasket.basketmanager.basket.BasketActor._
+import com.github.sonenko.shoppingbasket.stock.{Good, Stock, StockActor}
 import org.joda.time.DateTime
 
 class BasketActor(stock: Stock, stopSn: ActorRef => Unit) extends Actor with ActorLogging {

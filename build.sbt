@@ -1,8 +1,8 @@
 import sbt.Keys._
 
-name := "Shop"
+name := "Shopping Basket"
 
-description := "Simple Shop that able to scale in minutes :)"
+description := "Simple Shopping Basket that able to scale in minutes :)"
 
 version := "0.0.1"
 
@@ -17,7 +17,7 @@ scalacOptions ++= List(
   "-unchecked"
 )
 
-assemblyJarName in assembly := "Shop.jar"
+assemblyJarName in assembly := "ShoppingBasket.jar"
 mainClass in assembly := Some("com.github.sonenko.shoppingbasket.Main")
 
 resolvers ++= List(
@@ -34,10 +34,6 @@ libraryDependencies ++= List(
   "com.typesafe" % "config" % "1.3.0",
   "com.typesafe.akka" %% "akka-http-experimental" % akkaV,
   "com.typesafe.akka" %% "akka-actor" % akkaV,
-  "com.typesafe.akka" %% "akka-persistence" % akkaV,
-  "com.typesafe.akka" %% "akka-remote" % akkaV,
-  "org.iq80.leveldb" % "leveldb" % "0.7",
-  "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8",
   "joda-time" % "joda-time" % "2.9.4",
   "org.joda" % "joda-money" % "0.11",
   "org.json4s" %% "json4s-core" % json4sV,

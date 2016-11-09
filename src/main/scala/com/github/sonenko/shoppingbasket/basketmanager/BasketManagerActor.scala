@@ -1,24 +1,24 @@
 package com.github.sonenko.shoppingbasket
-package shop
+package basketmanager
 
 import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, ActorRefFactory, Props}
+import com.github.sonenko.shoppingbasket.basketmanager.BasketManagerActor.Commands.{ExpireBaskets, _}
+import com.github.sonenko.shoppingbasket.basketmanager.BasketManagerActor._
+import com.github.sonenko.shoppingbasket.basketmanager.basket.BasketActor.Commands.ByeBye
+import com.github.sonenko.shoppingbasket.basketmanager.basket.{Basket, BasketActor}
 import com.github.sonenko.shoppingbasket.stock.Stock
-import com.github.sonenko.shoppingbasket.shop.ShopActor.Commands.{ExpireBaskets, _}
-import com.github.sonenko.shoppingbasket.shop.ShopActor._
-import com.github.sonenko.shoppingbasket.shop.basket.BasketActor.Commands.ByeBye
-import com.github.sonenko.shoppingbasket.shop.basket.{Basket, BasketActor}
 import org.joda.time.DateTime
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class ShopActor(stock: Stock, createBasketFunc: (ActorRefFactory, Stock) => Basket) extends Actor {
+class BasketManagerActor(stock: Stock, createBasketFunc: (ActorRefFactory, Stock) => Basket) extends Actor {
   var baskets: Map[UUID, Basket] = Map()
   val expire = Config.expireBasketsEverySeconds
 
-  context.system.scheduler.schedule(expire seconds, expire seconds)(self ! ShopActor.Commands.ExpireBaskets)
+  context.system.scheduler.schedule(expire seconds, expire seconds)(self ! BasketManagerActor.Commands.ExpireBaskets)
 
   override def receive: Receive = {
     case c: Command => c match {
@@ -35,7 +35,7 @@ class ShopActor(stock: Stock, createBasketFunc: (ActorRefFactory, Stock) => Bask
           basket.actor.tell(cmd, sender)
         }
       case GetState =>
-        sender ! ShopState(baskets.keys.toList)
+        sender ! BasketManagerState(baskets.keys.toList)
       case ExpireBaskets =>
         val (newBaskets, toEraseBaskets) = baskets.partition(_._2.updatedAt.plusSeconds(expire).isAfter(DateTime.now()))
         baskets = newBaskets
@@ -77,11 +77,11 @@ class ShopActor(stock: Stock, createBasketFunc: (ActorRefFactory, Stock) => Bask
   }
 }
 
-object ShopActor {
+object BasketManagerActor {
 
-  def create(ctx: ActorRefFactory, stock: Stock, createBasketFunc: (ActorRefFactory, Stock) => Basket = createBasketFunc): Shop =
-    new Shop {
-      override val actor = ctx.actorOf(Props(classOf[ShopActor], stock, createBasketFunc))
+  def create(ctx: ActorRefFactory, stock: Stock, createBasketFunc: (ActorRefFactory, Stock) => Basket = createBasketFunc): BasketManager =
+    new BasketManager {
+      override val actor = ctx.actorOf(Props(classOf[BasketManagerActor], stock, createBasketFunc))
     }
 
   private def createBasketFunc(ctx: ActorRefFactory, stock: Stock): Basket =
@@ -98,6 +98,6 @@ object ShopActor {
   }
 }
 
-trait Shop {
+trait BasketManager {
   val actor: ActorRef
 }
