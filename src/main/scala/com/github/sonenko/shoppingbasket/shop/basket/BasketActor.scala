@@ -76,9 +76,11 @@ class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with Act
   }
 
   def beforeStop(putGoodsBack: Boolean) = {
-    state.goods.foreach(good => {
-      depot.actor ! DepotActor.Commands.PutGood(good.id, good.count, false)
-    })
+    if (putGoodsBack) {
+      state.goods.foreach(good => {
+        depot.actor ! DepotActor.Commands.PutGood(good.id, good.count, false)
+      })
+    }
   }
 }
 

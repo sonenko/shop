@@ -49,6 +49,12 @@ trait ShoppingBasketRoute {
             }
           }
         }
+      } ~ path("buy") {
+        post {
+          complete {
+            inquire(shop.actor, ShopActor.Commands.Buy(basketId))
+          }
+        }
       }
     } ~
     setCookie(cook) { ctx =>

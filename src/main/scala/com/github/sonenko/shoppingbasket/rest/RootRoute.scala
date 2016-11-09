@@ -59,6 +59,7 @@ class RootRoute(val log: LoggingAdapter, val depot: Depot, val shop: Shop) exten
     case GoodNotFoundInDepotError | GoodAmountIsLowInDepotError => StatusCodes.BadRequest
     case BasketNotFoundError => StatusCodes.BadRequest
     case RemoveGoodFromBasketSuccess(state) => state
+    case BuySuccess => StatusCodes.NoContent
     case x: ActorAnswer =>
       val errorMsg = s"unexpected case class received to rest $x"
       log.warning(errorMsg)
