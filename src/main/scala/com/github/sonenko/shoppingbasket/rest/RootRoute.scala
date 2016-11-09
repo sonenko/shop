@@ -29,12 +29,6 @@ class RootRoute(val log: LoggingAdapter, val stock: Stock, val basketManager: Ba
   def inquire(who: ActorRef, msg: Any, pf: PartialFunction[Any, HttpResponse] = PartialFunction.empty): Future[HttpResponse] =
     inquireInternal(who, msg).map(x => actorAnswerToRest(x , pf))
 
-  protected implicit def triple2Response(t: (StatusCode, ActorAnswer, List[HttpHeader])): HttpResponse = HttpResponse(
-    status = t._1,
-    entity = HttpEntity(ContentType(MediaTypes.`application/json`), write(t._2)),
-    headers = t._3
-  )
-
   protected implicit def tupleActorAnswer2Response(t: (StatusCode, ActorAnswer)): HttpResponse = HttpResponse(
     status = t._1,
     entity = HttpEntity(ContentType(MediaTypes.`application/json`), write(t._2))
@@ -43,24 +37,22 @@ class RootRoute(val log: LoggingAdapter, val stock: Stock, val basketManager: Ba
   protected implicit def tupleString2Response(t: (StatusCode, String)): HttpResponse =
     HttpResponse(status = t._1, entity = t._2)
 
-  protected implicit def actorAnswer2Response(a: ActorAnswer): HttpResponse =
-    HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`application/json`), write(a)))
-
-  protected implicit def statusCodeToResponce(c: StatusCode): HttpResponse = HttpResponse(status = c)
+  protected implicit def statusCodeToResponse(c: StatusCode): HttpResponse = HttpResponse(status = c)
 
   protected def inquireInternal(who: ActorRef, msg: Any): Future[ActorAnswer] =
     ask(who, msg).mapTo[ActorAnswer]
 
   private def actorAnswerToRest(actorAnswer: ActorAnswer, pf: PartialFunction[Any, HttpResponse]): HttpResponse =
     (pf orElse ({
-      case msg: BasketManagerState => msg
+      case msg: BasketManagerState => StatusCodes.OK -> msg
       case AddGoodToBasketSuccess(state) => StatusCodes.Created -> state
-      case msg: BasketState => msg
+      case msg: BasketState => StatusCodes.OK -> msg
       case Busy => StatusCodes.TooManyRequests -> "previous request in progress, be patient"
-      case msg: StockState => msg
-      case GoodNotFoundInStockError | GoodAmountIsLowInStockError => StatusCodes.BadRequest
+      case msg: StockState => StatusCodes.OK -> msg
+      case GoodNotFoundInStockError => StatusCodes.BadRequest -> "product with specified id not fount is stock"
+      case GoodAmountIsLowInStockError => StatusCodes.BadRequest -> "stock does not contain so many products"
       case BasketNotFoundError => StatusCodes.BadRequest
-      case RemoveGoodFromBasketSuccess(state) => state
+      case RemoveGoodFromBasketSuccess(state) => StatusCodes.OK -> state
       case BasketDropSuccess => StatusCodes.NoContent
       case x: ActorAnswer =>
         val errorMsg = s"unexpected case class received to rest $x"
