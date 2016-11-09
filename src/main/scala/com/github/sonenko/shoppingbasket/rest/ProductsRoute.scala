@@ -3,7 +3,7 @@ package rest
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import com.github.sonenko.shoppingbasket.depot.DepotActor
+import com.github.sonenko.shoppingbasket.stock.StockActor
 
 /** rest routes for '/api/products'
   */
@@ -13,7 +13,7 @@ trait ProductsRoute {
     pathEndOrSingleSlash {
       get {
         complete {
-          inquire(depot.actor, DepotActor.Commands.GetState)
+          inquire(stock.actor, StockActor.Commands.GetState)
         }
       }
     }
