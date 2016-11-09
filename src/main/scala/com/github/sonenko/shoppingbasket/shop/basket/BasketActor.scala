@@ -4,12 +4,12 @@ import java.util.UUID
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, PoisonPill, Props}
 import com.github.sonenko.shoppingbasket._
-import com.github.sonenko.shoppingbasket.depot.{Depot, DepotActor, Good}
+import com.github.sonenko.shoppingbasket.stock.{Stock, StockActor, Good}
 import com.github.sonenko.shoppingbasket.shop.basket.BasketActor.Commands._
 import com.github.sonenko.shoppingbasket.shop.basket.BasketActor._
 import org.joda.time.DateTime
 
-class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with ActorLogging {
+class BasketActor(stock: Stock, stopSn: ActorRef => Unit) extends Actor with ActorLogging {
   var state = BasketState(Nil)
 
   override def receive: Receive = {
@@ -18,14 +18,14 @@ class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with Act
         beforeStop(putGoodsBack)
         stopSn(self)
       case AddGood(goodId, count) =>
-        depot.actor ! DepotActor.Commands.TakeGood(goodId, count)
+        stock.actor ! StockActor.Commands.TakeGood(goodId, count)
         context.become(busy(sender))
       case GetState =>
         sender ! state
       case DropGood(goodId, count) =>
         ifGoodExistsInBasket(goodId){ goodInBasket =>
           val goodsToRemoveCount = if (goodInBasket.count > count) goodInBasket.count - count else goodInBasket.count
-          depot.actor ! DepotActor.Commands.PutGood(goodId, goodsToRemoveCount)
+          stock.actor ! StockActor.Commands.PutGood(goodId, goodsToRemoveCount)
           context.become(busy(sender))
         }
     }
@@ -39,23 +39,23 @@ class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with Act
       stopSn(self)
     case GetState =>
       sender ! state
-    case res@GoodRemoveFromDepotSuccess(goodFromDepot) =>
-      state.goods.find(_.id == goodFromDepot.id) match {
+    case res@GoodRemoveFromStockSuccess(goodFromStock) =>
+      state.goods.find(_.id == goodFromStock.id) match {
         case None =>
-          state = BasketState(goodFromDepot :: state.goods)
+          state = BasketState(goodFromStock :: state.goods)
         case Some(oldGood) =>
           val newGoods = state.goods.map(x =>
-            if (x.id == goodFromDepot.id) oldGood.copy(count = oldGood.count + goodFromDepot.count)
+            if (x.id == goodFromStock.id) oldGood.copy(count = oldGood.count + goodFromStock.count)
             else x
           )
           state = BasketState(newGoods)
       }
       sndr ! AddGoodToBasketSuccess(state)
       context.unbecome()
-    case res@(GoodNotFoundInDepotError | GoodAmountIsLowInDepotError) =>
+    case res@(GoodNotFoundInStockError | GoodAmountIsLowInStockError) =>
       sndr ! res
       context.unbecome()
-    case GoodAddToDepotSuccess(removedGood) =>
+    case GoodAddToStockSuccess(removedGood) =>
       val goodId = removedGood.id
       val goodToRemove = state.goods.find(_.id == goodId).head
       if (goodToRemove.count == removedGood.count) {
@@ -80,15 +80,15 @@ class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with Act
   def beforeStop(putGoodsBack: Boolean) = {
     if (putGoodsBack) {
       state.goods.foreach(good => {
-        depot.actor ! DepotActor.Commands.PutGood(good.id, good.count, false)
+        stock.actor ! StockActor.Commands.PutGood(good.id, good.count, false)
       })
     }
   }
 }
 
 object BasketActor {
-  def create(ctx: ActorRefFactory, depot: Depot, stopSn: ActorRef => Unit = _ ! PoisonPill) = new Basket {
-    override val actor = ctx.actorOf(Props(classOf[BasketActor], depot, stopSn))
+  def create(ctx: ActorRefFactory, stock: Stock, stopSn: ActorRef => Unit = _ ! PoisonPill) = new Basket {
+    override val actor = ctx.actorOf(Props(classOf[BasketActor], stock, stopSn))
   }
 
   sealed trait Command

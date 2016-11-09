@@ -1,24 +1,24 @@
 package com.github.sonenko.shoppingbasket
-package depot
+package stock
 
 import java.net.URL
 import java.util.UUID
 import java.util.UUID.fromString
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, Props}
-import com.github.sonenko.shoppingbasket.depot.DepotActor.Commands._
-import com.github.sonenko.shoppingbasket.depot.DepotActor._
+import com.github.sonenko.shoppingbasket.stock.StockActor.Commands._
+import com.github.sonenko.shoppingbasket.stock.StockActor._
 import org.joda.money.{CurrencyUnit, Money}
 
-/** serves as Depot
+/** serves as Stock
   */
-class DepotActor extends Actor with ActorLogging {
+class StockActor extends Actor with ActorLogging {
   var state: List[Good] = initialState
 
   val receive: Receive = {
     case c: Command => c match {
       case GetState =>
-        sender ! DepotState(state)
+        sender ! StockState(state)
       case TakeGood(goodId, count) =>
         ifGoodExists(goodId) { good =>
           ifGoodCountEnough(good, count){
@@ -26,38 +26,38 @@ class DepotActor extends Actor with ActorLogging {
               case good: Good if good.id == goodId => good.copy(count = good.count - count)
               case x => x
             }
-            sender ! GoodRemoveFromDepotSuccess(good.copy(count = count))
+            sender ! GoodRemoveFromStockSuccess(good.copy(count = count))
           }
         }
       case m@ PutGood(goodId, count, doReplay) =>
         ifGoodExists(goodId) { good =>
           state = state.map{
-            case goodInDepot @ Good(`goodId`, _, _, oldCount, _, _) =>
-              goodInDepot.copy(count = oldCount + count)
+            case goodInStock @ Good(`goodId`, _, _, oldCount, _, _) =>
+              goodInStock.copy(count = oldCount + count)
             case x => x
           }
-          if (doReplay) sender ! GoodAddToDepotSuccess(good.copy(count = count))
+          if (doReplay) sender ! GoodAddToStockSuccess(good.copy(count = count))
         }
     }
   }
 
   def ifGoodExists(goodId: UUID)(fn: Good => Unit): Unit = {
     state.find(_.id == goodId) match {
-      case None =>  sender ! GoodNotFoundInDepotError
+      case None =>  sender ! GoodNotFoundInStockError
       case Some(good) => fn(good)
     }
   }
 
   def ifGoodCountEnough(good: Good, count: Int)(fn: => Unit): Unit = {
     if (good.count >= count) fn
-    else sender ! GoodAmountIsLowInDepotError
+    else sender ! GoodAmountIsLowInStockError
   }
 }
 
-object DepotActor {
+object StockActor {
 
-  def create(system: ActorRefFactory) = new Depot {
-    override val actor = system.actorOf(Props(classOf[DepotActor]))
+  def create(system: ActorRefFactory) = new Stock {
+    override val actor = system.actorOf(Props(classOf[StockActor]))
   }
 
   val initialState = {
@@ -85,7 +85,7 @@ object DepotActor {
   }
 }
 
-trait Depot {
+trait Stock {
   val actor: ActorRef
 }
 

@@ -6,7 +6,7 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.pattern.ask
-import com.github.sonenko.shoppingbasket.depot.Depot
+import com.github.sonenko.shoppingbasket.stock.Stock
 import com.github.sonenko.shoppingbasket.shop.Shop
 import org.json4s.jackson.Serialization.write
 
@@ -18,10 +18,10 @@ import scala.language.implicitConversions
   * main route that combine other routes for rest
   *
   * @param log   - logger
-  * @param depot - wrapper for DepotActor
+  * @param stock - wrapper for StockActor
   * @param shop  - wrapper for ShopActor
   */
-class RootRoute(val log: LoggingAdapter, val depot: Depot, val shop: Shop) extends JsonProtocol
+class RootRoute(val log: LoggingAdapter, val stock: Stock, val shop: Shop) extends JsonProtocol
   with ShoppingBasketRoute with ProductsRoute with AdminRoute {
 
   def route = shoppingBasketRoute ~ productsRoute ~ adminRoute
@@ -55,8 +55,8 @@ class RootRoute(val log: LoggingAdapter, val depot: Depot, val shop: Shop) exten
     case AddGoodToBasketSuccess(state) => StatusCodes.Created -> state
     case msg: BasketState => msg
     case Busy => StatusCodes.TooManyRequests -> "previous request in progress, be patient"
-    case msg: DepotState => msg
-    case GoodNotFoundInDepotError | GoodAmountIsLowInDepotError => StatusCodes.BadRequest
+    case msg: StockState => msg
+    case GoodNotFoundInStockError | GoodAmountIsLowInStockError => StatusCodes.BadRequest
     case BasketNotFoundError => StatusCodes.BadRequest
     case RemoveGoodFromBasketSuccess(state) => state
     case BuySuccess => StatusCodes.NoContent

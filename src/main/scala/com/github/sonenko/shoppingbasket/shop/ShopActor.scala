@@ -4,7 +4,7 @@ package shop
 import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, ActorRefFactory, Props}
-import com.github.sonenko.shoppingbasket.depot.Depot
+import com.github.sonenko.shoppingbasket.stock.Stock
 import com.github.sonenko.shoppingbasket.shop.ShopActor.Commands.{ExpireBaskets, _}
 import com.github.sonenko.shoppingbasket.shop.ShopActor._
 import com.github.sonenko.shoppingbasket.shop.basket.BasketActor.Commands.ByeBye
@@ -14,7 +14,7 @@ import org.joda.time.DateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-class ShopActor(depot: Depot, createBasketFunc: (ActorRefFactory, Depot) => Basket) extends Actor {
+class ShopActor(stock: Stock, createBasketFunc: (ActorRefFactory, Stock) => Basket) extends Actor {
   var baskets: Map[UUID, Basket] = Map()
   val expire = Config.expireBasketsEverySeconds
 
@@ -64,7 +64,7 @@ class ShopActor(depot: Depot, createBasketFunc: (ActorRefFactory, Depot) => Bask
   def forceWithBasket(basketId: UUID)(func: Basket => Unit): Unit = baskets.get(basketId) match {
     case Some(basket) => func(basket)
     case None =>
-      val basket = createBasketFunc(context, depot)
+      val basket = createBasketFunc(context, stock)
       baskets += basketId -> basket
       func(basket)
   }
@@ -79,13 +79,13 @@ class ShopActor(depot: Depot, createBasketFunc: (ActorRefFactory, Depot) => Bask
 
 object ShopActor {
 
-  def create(ctx: ActorRefFactory, depot: Depot, createBasketFunc: (ActorRefFactory, Depot) => Basket = createBasketFunc): Shop =
+  def create(ctx: ActorRefFactory, stock: Stock, createBasketFunc: (ActorRefFactory, Stock) => Basket = createBasketFunc): Shop =
     new Shop {
-      override val actor = ctx.actorOf(Props(classOf[ShopActor], depot, createBasketFunc))
+      override val actor = ctx.actorOf(Props(classOf[ShopActor], stock, createBasketFunc))
     }
 
-  private def createBasketFunc(ctx: ActorRefFactory, depot: Depot): Basket =
-    BasketActor.create(ctx, depot)
+  private def createBasketFunc(ctx: ActorRefFactory, stock: Stock): Basket =
+    BasketActor.create(ctx, stock)
 
   sealed trait Command
 

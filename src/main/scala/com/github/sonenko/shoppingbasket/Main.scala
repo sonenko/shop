@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
-import com.github.sonenko.shoppingbasket.depot.DepotActor
+import com.github.sonenko.shoppingbasket.stock.StockActor
 import com.github.sonenko.shoppingbasket.rest.RootRoute
 import com.github.sonenko.shoppingbasket.shop.ShopActor
 
@@ -24,11 +24,11 @@ class Constructor {
   import system.dispatcher
 
   val log = Logging.getLogger(system, this)
-  val depot = DepotActor.create(system)
-  val shop = ShopActor.create(system, depot)
+  val stock = StockActor.create(system)
+  val shop = ShopActor.create(system, stock)
   val route = new RootRoute(
     log = log,
-    depot = depot,
+    stock = stock,
     shop = shop
   ).route
 

@@ -2,7 +2,7 @@ package com.github.sonenko.shoppingbasket
 
 import java.util.UUID
 
-import com.github.sonenko.shoppingbasket.depot.Good
+import com.github.sonenko.shoppingbasket.stock.Good
 import org.joda.money.{CurrencyUnit, Money}
 
 sealed trait ActorAnswer
@@ -29,9 +29,9 @@ object BasketState {
 }
 case object Busy extends ActorAnswer
 
-// Depot
-case class DepotState(goods: List[Good]) extends ActorAnswer
-case object GoodNotFoundInDepotError extends ActorAnswer
-case object GoodAmountIsLowInDepotError extends ActorAnswer
-case class GoodRemoveFromDepotSuccess(good: Good) extends ActorAnswer
-case class GoodAddToDepotSuccess(good: Good) extends ActorAnswer
+// Stock
+case class StockState(goods: List[Good]) extends ActorAnswer
+case object GoodNotFoundInStockError extends ActorAnswer
+case object GoodAmountIsLowInStockError extends ActorAnswer
+case class GoodRemoveFromStockSuccess(good: Good) extends ActorAnswer
+case class GoodAddToStockSuccess(good: Good) extends ActorAnswer

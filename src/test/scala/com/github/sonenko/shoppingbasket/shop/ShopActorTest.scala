@@ -3,7 +3,7 @@ package com.github.sonenko.shoppingbasket.shop
 
 import akka.actor.{ActorRefFactory, ActorSystem}
 import akka.testkit.{DefaultTimeout, ImplicitSender, TestKit}
-import com.github.sonenko.shoppingbasket.depot.Depot
+import com.github.sonenko.shoppingbasket.stock.Stock
 import com.github.sonenko.shoppingbasket.shop.basket.{Basket, BasketActor}
 import com.github.sonenko.shoppingbasket.{BasketDropSuccess, BasketNotFoundError, ShopState}
 import org.scalatest.mock.MockitoSugar
@@ -14,17 +14,17 @@ class ShopActorTest extends TestKit(ActorSystem("ShopActorTest")) with WordSpecL
 
   trait Scope {
     val basketId = java.util.UUID.randomUUID()
-    val depot = mock[Depot]
+    val stock = mock[Stock]
     var basketCreated = false
 
-    def createFakeBasketFunc(ctx: ActorRefFactory, depot: Depot): Basket = {
+    def createFakeBasketFunc(ctx: ActorRefFactory, stock: Stock): Basket = {
       basketCreated = true
       new Basket {
         override val actor = self
       }
     }
 
-    val shop = ShopActor.create(system, depot, createFakeBasketFunc)
+    val shop = ShopActor.create(system, stock, createFakeBasketFunc)
   }
 
   "ShopActor.Commands.GetState" should {
