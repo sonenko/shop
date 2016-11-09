@@ -9,6 +9,19 @@ import com.github.sonenko.shoppingbasket.basketmanager.basket.BasketActor._
 import com.github.sonenko.shoppingbasket.stock.{Good, Stock, StockActor}
 import org.joda.time.DateTime
 
+/**
+  * Basket actor - represents current state of basket, every user that has at least one good has his own basket.
+  * basket can:
+  * - be closed
+  * - add good
+  * - remove good
+  * - view state
+  * It speaks to Stock, and ask if stock has specified good or not. if yes and stock has need count of goods
+  * basket takes this goods from stock.
+  * when basket closes - it sends items back to stock, if exchange rejected.
+  * @param stock - wrapper for StockActor
+  * @param stopSn - function that executes to shut down actor
+  */
 class BasketActor(stock: Stock, stopSn: ActorRef => Unit) extends Actor with ActorLogging {
   var state = BasketState(Nil)
 
@@ -32,8 +45,6 @@ class BasketActor(stock: Stock, stopSn: ActorRef => Unit) extends Actor with Act
   }
 
   def busy(sndr: ActorRef): Receive = {
-    // FIXME this is source of problem
-    // it is possible that we purchase in this moment
     case ByeBye(putGoodsBack) =>
       beforeStop(putGoodsBack)
       stopSn(self)

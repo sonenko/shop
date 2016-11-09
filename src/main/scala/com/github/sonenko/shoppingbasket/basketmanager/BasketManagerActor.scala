@@ -14,6 +14,19 @@ import org.joda.time.DateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
+/**
+  * Actor that manages baskets.
+  * It will add new basket for each new user if user has at least one product.
+  * Actor also expire baskets it they are idle, and put goods back to stock in this case.
+  * actor abilities:
+  * - create basket(implicitly when good added)
+  * - drop basket (exchange)
+  * - drop basket, and put items to stock (reject / expire)
+  * - show state
+  * - forward messages to basket
+  * @param stock - StockActor wrapper
+  * @param createBasketFunc - function that creates basket
+  */
 class BasketManagerActor(stock: Stock, createBasketFunc: (ActorRefFactory, Stock) => Basket) extends Actor {
   var baskets: Map[UUID, Basket] = Map()
   val expire = Config.expireBasketsEverySeconds
