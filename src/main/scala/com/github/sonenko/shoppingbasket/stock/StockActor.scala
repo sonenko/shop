@@ -10,7 +10,11 @@ import com.github.sonenko.shoppingbasket.stock.StockActor.Commands._
 import com.github.sonenko.shoppingbasket.stock.StockActor._
 import org.joda.money.{CurrencyUnit, Money}
 
-/** serves as Stock
+/** Actor that stores stock state.
+  * using this actor we can concurrently:
+  *  - take goods from stock
+  *  - view stock state
+  *  - put goods back (if exchange rejected)
   */
 class StockActor extends Actor with ActorLogging {
   var state: List[Good] = initialState

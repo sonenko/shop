@@ -17,17 +17,17 @@ import scala.language.implicitConversions
 /**
   * main route that combine other routes for rest
   *
-  * @param log   - logger
-  * @param stock - wrapper for StockActor
-  * @param basketManager  - wrapper for BasketManagerActor
+  * @param log           - logger
+  * @param stock         - wrapper for StockActor
+  * @param basketManager - wrapper for BasketManagerActor
   */
 class RootRoute(val log: LoggingAdapter, val stock: Stock, val basketManager: BasketManager) extends JsonProtocol
   with ShoppingBasketRoute with ProductsRoute with AdminRoute {
 
-  def route = shoppingBasketRoute ~ productsRoute ~ adminRoute
+  val route = shoppingBasketRoute ~ productsRoute ~ adminRoute
 
   def inquire(who: ActorRef, msg: Any, pf: PartialFunction[Any, HttpResponse] = PartialFunction.empty): Future[HttpResponse] =
-    inquireInternal(who, msg).map(x => actorAnswerToRest(x , pf))
+    inquireInternal(who, msg).map(x => actorAnswerToRest(x, pf))
 
   protected implicit def tupleActorAnswer2Response(t: (StatusCode, ActorAnswer)): HttpResponse = HttpResponse(
     status = t._1,
@@ -58,5 +58,5 @@ class RootRoute(val log: LoggingAdapter, val stock: Stock, val basketManager: Ba
         val errorMsg = s"unexpected case class received to rest $x"
         log.warning(errorMsg)
         StatusCodes.InternalServerError -> errorMsg
-    }:PartialFunction[Any, HttpResponse])).apply(actorAnswer)
+    }: PartialFunction[Any, HttpResponse])).apply(actorAnswer)
 }

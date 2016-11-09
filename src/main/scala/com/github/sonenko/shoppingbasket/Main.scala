@@ -15,7 +15,7 @@ object Main extends App {
   new Constructor().start()
 }
 
-/** Constructs all together and run the application
+/** Creates instances of all parts of the application and finally starts akka.http server that routes with RootRoute
   */
 class Constructor {
   implicit val system = ActorSystem("shopping-basket-system")
