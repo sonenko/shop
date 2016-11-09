@@ -57,7 +57,7 @@ class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with Act
         state = BasketState(state.goods.filter(_.id != goodId))
       } else {
         state = BasketState(state.goods.map {
-          case goodInBasket @ Good(`goodId`, _, _, oldCount, _) => goodInBasket.copy(count = oldCount - removedGood.count)
+          case goodInBasket @ Good(`goodId`, _, _, oldCount, _, _) => goodInBasket.copy(count = oldCount - removedGood.count)
           case x => x
         })
       }
