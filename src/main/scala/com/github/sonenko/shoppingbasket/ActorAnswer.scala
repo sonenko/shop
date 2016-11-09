@@ -13,6 +13,7 @@ case class ShopState(basketIds: List[UUID]) extends ActorAnswer
 case object BasketDropSuccess extends ActorAnswer
 case object BasketAlreadyExistsError extends ActorAnswer
 case object BasketNotFoundError extends ActorAnswer
+case object BuySuccess extends ActorAnswer
 
 // Basket
 case class AddGoodToBasketSuccess(state: BasketState) extends ActorAnswer

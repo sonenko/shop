@@ -23,7 +23,7 @@ class ShopActor(depot: Depot, createBasketFunc: (ActorRefFactory, Depot) => Bask
     case c: ShopActor.Command => c match {
       case ShopActor.Commands.DropBasket(basketId) =>
         ifBasketExists(basketId) { basket =>
-          basket.actor ! BasketActor.Commands.ByeBye(false)
+          basket.actor ! BasketActor.Commands.ByeBye(true)
           baskets -= basketId
           sender ! BasketDropSuccess
         }
@@ -38,7 +38,13 @@ class ShopActor(depot: Depot, createBasketFunc: (ActorRefFactory, Depot) => Bask
       case ExpireBaskets =>
         val (newBaskets, toEraseBaskets) = baskets.partition(_._2.updatedAt.plusSeconds(expire).isAfter(DateTime.now()))
         baskets = newBaskets
-        toEraseBaskets.foreach(x => x._2.actor ! ByeBye(false))
+        toEraseBaskets.foreach(x => x._2.actor ! ByeBye(true))
+      case ShopActor.Commands.Buy(basketId) =>
+        ifBasketExists(basketId) { basket =>
+          baskets -= basketId
+          basket.actor ! ByeBye(false)
+          sender ! BuySuccess
+        }
     }
   }
 
@@ -87,6 +93,7 @@ object ShopActor {
     case class ToBasket(basketId: UUID, basketActor: BasketActor.Command, forceCreate: Boolean) extends Command
     case object GetState extends Command
     case object ExpireBaskets extends Command
+    case class Buy(basketId: UUID) extends Command
   }
 }
 

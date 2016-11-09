@@ -45,11 +45,11 @@ class ShopActorTest extends TestKit(ActorSystem("ShopActorTest")) with WordSpecL
       shop.actor ! ShopActor.Commands.DropBasket(basketId)
       expectMsg(BasketNotFoundError)
     }
-    "send ByeBye to Basket and respond with ShopActor.Answers.BasketDropSuccess and remove actor from basket" in new Scope {
+    "send ByeBye to Basket and respond with BasketDropSuccess and remove actor from basket" in new Scope {
       shop.actor ! ShopActor.Commands.ToBasket(basketId, BasketActor.Commands.ByeBye(false), true) // create basket implicitly
       expectMsg(BasketActor.Commands.ByeBye(false))
       shop.actor ! ShopActor.Commands.DropBasket(basketId)
-      expectMsg(BasketActor.Commands.ByeBye(false))
+      expectMsg(BasketActor.Commands.ByeBye(true))
       expectMsg(BasketDropSuccess)
       shop.actor ! ShopActor.Commands.GetState
       expectMsg(ShopState(Nil))

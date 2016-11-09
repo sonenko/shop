@@ -111,6 +111,47 @@ class ShoppingBasketTest extends Integration {
     }
   }
 
+  "Post /api/shoppingbasket/buy" should {
+    "respond with status BadRequest if basket not created" in new Scope {
+      val cookeId = fetchCookieId(route)
+      Post("/api/shoppingbasket/buy") ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
+        status shouldEqual StatusCodes.BadRequest
+      }
+    }
+    "respond with status NoContent in happy case, and empty basket and not return item back to depot" in new Scope {
+      // add product
+      val cookeId = fetchCookieId(route)
+      val count = 2
+      val body = jsonEntity(s"""{"goodId": "$goodId", "count": $count}""")
+      Post("/api/shoppingbasket", body) ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
+        status shouldEqual StatusCodes.Created
+        responseAs[BasketState] shouldEqual BasketState(List(good.copy(count = count)))
+      }
+      // good should not be in depot
+      Get("/api/products") ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+        val initialGood = DepotActor.initialState.head
+        entityAs[DepotState].goods.head.id shouldEqual initialGood.id
+        entityAs[DepotState].goods.head.count shouldEqual (initialGood.count - count)
+      }
+      // purchase
+      Post("/api/shoppingbasket/buy") ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
+        status shouldEqual StatusCodes.NoContent
+      }
+      // current state - basket should be deleted
+      Get("/api/shoppingbasket") ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
+        status shouldEqual StatusCodes.BadRequest
+      }
+      // good should not be in depot
+      Get("/api/products") ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+        val initialGood = DepotActor.initialState.head
+        entityAs[DepotState].goods.head.id shouldEqual initialGood.id
+        entityAs[DepotState].goods.head.count shouldEqual (initialGood.count - count)
+      }
+    }
+  }
+
   def fetchCookieId(route: Route): String = {
     var res: String = ""
     Get("/api/shoppingbasket") ~> route ~> check {
