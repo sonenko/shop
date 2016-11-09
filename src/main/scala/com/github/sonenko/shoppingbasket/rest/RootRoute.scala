@@ -29,26 +29,26 @@ class RootRoute(val log: LoggingAdapter, val stock: Stock, val basketManager: Ba
   def inquire(who: ActorRef, msg: Any, pf: PartialFunction[Any, HttpResponse] = PartialFunction.empty): Future[HttpResponse] =
     inquireInternal(who, msg).map(x => actorAnswerToRest(x , pf))
 
-  private implicit def triple2Response(t: (StatusCode, ActorAnswer, List[HttpHeader])): HttpResponse = HttpResponse(
+  protected implicit def triple2Response(t: (StatusCode, ActorAnswer, List[HttpHeader])): HttpResponse = HttpResponse(
     status = t._1,
     entity = HttpEntity(ContentType(MediaTypes.`application/json`), write(t._2)),
     headers = t._3
   )
 
-  private implicit def tupleActorAnswer2Response(t: (StatusCode, ActorAnswer)): HttpResponse = HttpResponse(
+  protected implicit def tupleActorAnswer2Response(t: (StatusCode, ActorAnswer)): HttpResponse = HttpResponse(
     status = t._1,
     entity = HttpEntity(ContentType(MediaTypes.`application/json`), write(t._2))
   )
 
-  private implicit def tupleString2Response(t: (StatusCode, String)): HttpResponse =
+  protected implicit def tupleString2Response(t: (StatusCode, String)): HttpResponse =
     HttpResponse(status = t._1, entity = t._2)
 
-  private implicit def actorAnswer2Response(a: ActorAnswer): HttpResponse =
+  protected implicit def actorAnswer2Response(a: ActorAnswer): HttpResponse =
     HttpResponse(entity = HttpEntity(ContentType(MediaTypes.`application/json`), write(a)))
 
-  private implicit def statusCodeToResponce(c: StatusCode): HttpResponse = HttpResponse(status = c)
+  protected implicit def statusCodeToResponce(c: StatusCode): HttpResponse = HttpResponse(status = c)
 
-  private def inquireInternal(who: ActorRef, msg: Any): Future[ActorAnswer] =
+  protected def inquireInternal(who: ActorRef, msg: Any): Future[ActorAnswer] =
     ask(who, msg).mapTo[ActorAnswer]
 
   private def actorAnswerToRest(actorAnswer: ActorAnswer, pf: PartialFunction[Any, HttpResponse]): HttpResponse =
