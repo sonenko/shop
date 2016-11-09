@@ -1,23 +1,25 @@
-package com.github.sonenko.shoppingbasket.depot
+package com.github.sonenko.shoppingbasket
+package depot
 
 import java.net.URL
 import java.util.UUID
 import java.util.UUID.fromString
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, Props}
-import com.github.sonenko.shoppingbasket._
+import com.github.sonenko.shoppingbasket.depot.DepotActor.Commands._
+import com.github.sonenko.shoppingbasket.depot.DepotActor._
 import org.joda.money.{CurrencyUnit, Money}
 
 /** serves as Depot
   */
 class DepotActor extends Actor with ActorLogging {
-  var state: List[Good] = DepotActor.initialState
+  var state: List[Good] = initialState
 
   val receive: Receive = {
-    case c: DepotActor.Command => c match {
-      case DepotActor.Commands.GetState =>
+    case c: Command => c match {
+      case GetState =>
         sender ! DepotState(state)
-      case DepotActor.Commands.TakeGood(goodId, count) =>
+      case TakeGood(goodId, count) =>
         ifGoodExists(goodId) { good =>
           ifGoodCountEnough(good, count){
             state = state.map {
@@ -27,7 +29,7 @@ class DepotActor extends Actor with ActorLogging {
             sender ! GoodRemoveFromDepotSuccess(good.copy(count = count))
           }
         }
-      case m@ DepotActor.Commands.PutGood(goodId, count, doReplay) =>
+      case m@ PutGood(goodId, count, doReplay) =>
         ifGoodExists(goodId) { good =>
           state = state.map{
             case goodInDepot @ Good(`goodId`, _, _, oldCount, _, _) =>

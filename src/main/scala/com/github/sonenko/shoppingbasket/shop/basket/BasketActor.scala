@@ -5,22 +5,24 @@ import java.util.UUID
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, PoisonPill, Props}
 import com.github.sonenko.shoppingbasket._
 import com.github.sonenko.shoppingbasket.depot.{Depot, DepotActor, Good}
+import com.github.sonenko.shoppingbasket.shop.basket.BasketActor.Commands._
+import com.github.sonenko.shoppingbasket.shop.basket.BasketActor._
 import org.joda.time.DateTime
 
 class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with ActorLogging {
   var state = BasketState(Nil)
 
   override def receive: Receive = {
-    case c: BasketActor.Command => c match {
-      case BasketActor.Commands.ByeBye(putGoodsBack) =>
+    case c: Command => c match {
+      case ByeBye(putGoodsBack) =>
         beforeStop(putGoodsBack)
         stopSn(self)
-      case BasketActor.Commands.AddGood(goodId, count) =>
+      case AddGood(goodId, count) =>
         depot.actor ! DepotActor.Commands.TakeGood(goodId, count)
         context.become(busy(sender))
-      case BasketActor.Commands.GetState =>
+      case GetState =>
         sender ! state
-      case BasketActor.Commands.DropGood(goodId, count) =>
+      case DropGood(goodId, count) =>
         ifGoodExistsInBasket(goodId){ goodInBasket =>
           val goodsToRemoveCount = if (goodInBasket.count > count) goodInBasket.count - count else goodInBasket.count
           depot.actor ! DepotActor.Commands.PutGood(goodId, goodsToRemoveCount)
@@ -32,10 +34,10 @@ class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with Act
   def busy(sndr: ActorRef): Receive = {
     // FIXME this is source of problem
     // it is possible that we purchase in this moment
-    case BasketActor.Commands.ByeBye(putGoodsBack) =>
+    case ByeBye(putGoodsBack) =>
       beforeStop(putGoodsBack)
       stopSn(self)
-    case BasketActor.Commands.GetState =>
+    case GetState =>
       sender ! state
     case res@GoodRemoveFromDepotSuccess(goodFromDepot) =>
       state.goods.find(_.id == goodFromDepot.id) match {
@@ -66,7 +68,7 @@ class BasketActor(depot: Depot, stopSn: ActorRef => Unit) extends Actor with Act
       }
       sndr ! RemoveGoodFromBasketSuccess(state)
       context.unbecome()
-    case _: BasketActor.Command =>
+    case _: Command =>
       sender ! Busy
   }
 

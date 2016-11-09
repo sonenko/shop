@@ -104,7 +104,7 @@ class ShoppingBasketTest extends Integration {
       status shouldEqual StatusCodes.OK
       entityAs[DepotState] shouldNot equal(DepotState(DepotActor.initialState))
     }
-    Thread.sleep(3000)
+    Thread.sleep(1500)
     Get("/api/products") ~> route ~> check {
       status shouldEqual StatusCodes.OK
       entityAs[DepotState] shouldEqual DepotState(DepotActor.initialState)
