@@ -25,10 +25,11 @@ class ShoppingBasketTest extends Integration {
         Try(UUID.fromString(header[`Set-Cookie`].get.cookie.value)).isSuccess shouldEqual true
       }
     }
-    "return BadRequest if request contain cookie but no products" in new Scope {
+    "return empty array if request contain cookie but no products" in new Scope {
       val cookeId = fetchCookieId(route)
       Get("/api/shoppingbasket") ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
-        status shouldEqual StatusCodes.BadRequest
+        status shouldEqual StatusCodes.OK
+        responseAs[BasketState] shouldEqual BasketState(Nil)
       }
     }
   }
