@@ -91,6 +91,36 @@ class ShoppingBasketTest extends Integration {
         status shouldEqual StatusCodes.OK
       }
     }
+
+    "tup back correct number of goods" in new Scope {
+      val toAddCount = 3
+      val toRemoveCount = 1
+
+      val cookeId = fetchCookieId(route)
+      // add
+      val body = jsonEntity(s"""{"goodId": "$goodId", "count":$toAddCount}""")
+      Post("/api/shoppingbasket", body) ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
+        status shouldEqual StatusCodes.Created
+        responseAs[BasketState] shouldEqual BasketState(List(good.copy(count = toAddCount)))
+      }
+
+      val bodyDel = jsonEntity(s"""{"goodId": "$goodId", "count": $toRemoveCount}""")
+      Delete("/api/shoppingbasket", bodyDel) ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+      }
+      // check count in basket
+      Get("/api/shoppingbasket") ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+        responseAs[BasketState].goods.head.count shouldEqual (toAddCount - toRemoveCount)
+      }
+      // check count in Stock
+      Get("/api/products") ~> route ~> check {
+        status shouldEqual StatusCodes.OK
+        val initialGood = StockActor.initialState.head
+        entityAs[StockState].goods.head.id shouldEqual initialGood.id
+        entityAs[StockState].goods.head.count shouldEqual (initialGood.count - (toAddCount - toRemoveCount))
+      }
+    }
   }
 
   "After session expiration goods should be placed back to stock" in new Scope {
