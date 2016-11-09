@@ -5,7 +5,8 @@ import java.util.UUID
 
 import akka.actor.{Actor, ActorRef, ActorRefFactory, Props}
 import com.github.sonenko.shoppingbasket.depot.Depot
-import com.github.sonenko.shoppingbasket.shop.ShopActor.Commands.ExpireBaskets
+import com.github.sonenko.shoppingbasket.shop.ShopActor.Commands.{ExpireBaskets, _}
+import com.github.sonenko.shoppingbasket.shop.ShopActor._
 import com.github.sonenko.shoppingbasket.shop.basket.BasketActor.Commands.ByeBye
 import com.github.sonenko.shoppingbasket.shop.basket.{Basket, BasketActor}
 import org.joda.time.DateTime
@@ -20,26 +21,26 @@ class ShopActor(depot: Depot, createBasketFunc: (ActorRefFactory, Depot) => Bask
   context.system.scheduler.schedule(expire seconds, expire seconds)(self ! ShopActor.Commands.ExpireBaskets)
 
   override def receive: Receive = {
-    case c: ShopActor.Command => c match {
-      case ShopActor.Commands.DropBasket(basketId) =>
+    case c: Command => c match {
+      case DropBasket(basketId) =>
         ifBasketExists(basketId) { basket =>
           basket.actor ! BasketActor.Commands.ByeBye(true)
           baskets -= basketId
           sender ! BasketDropSuccess
         }
-      case ShopActor.Commands.ToBasket(basketId, cmd, forceCreate) =>
+      case ToBasket(basketId, cmd, forceCreate) =>
         updateBasketUpdatedAt(basketId)
         val fn = if (forceCreate) forceWithBasket _ else ifBasketExists _
         fn(basketId) { basket =>
           basket.actor.tell(cmd, sender)
         }
-      case ShopActor.Commands.GetState =>
+      case GetState =>
         sender ! ShopState(baskets.keys.toList)
       case ExpireBaskets =>
         val (newBaskets, toEraseBaskets) = baskets.partition(_._2.updatedAt.plusSeconds(expire).isAfter(DateTime.now()))
         baskets = newBaskets
         toEraseBaskets.foreach(x => x._2.actor ! ByeBye(true))
-      case ShopActor.Commands.Buy(basketId) =>
+      case Buy(basketId) =>
         ifBasketExists(basketId) { basket =>
           baskets -= basketId
           basket.actor ! ByeBye(false)
