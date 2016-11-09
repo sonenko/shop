@@ -1,12 +1,12 @@
 package com.github.sonenko.shoppingbasket.rest
 
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.HttpCookie
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import com.github.sonenko.shoppingbasket.{BasketNotFoundError, BasketState, Config}
 import com.github.sonenko.shoppingbasket.basketmanager.BasketManagerActor
 import com.github.sonenko.shoppingbasket.basketmanager.basket.BasketActor
+import com.github.sonenko.shoppingbasket.{BasketNotFoundError, BasketState, Config}
 
 
 trait ShoppingBasketRoute { this: RootRoute =>
@@ -28,7 +28,7 @@ trait ShoppingBasketRoute { this: RootRoute =>
                   basketId,
                   BasketActor.Commands.GetState,
                   false
-                ), {case BasketNotFoundError => BasketState(Nil)}
+                ), {case BasketNotFoundError => StatusCodes.OK -> BasketState(Nil)}
               )
             }
           } ~
