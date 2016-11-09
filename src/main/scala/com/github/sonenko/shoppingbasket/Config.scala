@@ -10,4 +10,5 @@ object Config {
   val adminName = cfg.getString("shoppingbasket.admin.name")
   val adminPassword = cfg.getString("shoppingbasket.admin.password")
   val timeout = cfg.getInt("shoppingbasket.timeoutInSec")
+  val expireBasketsEverySeconds = cfg.getInt("shoppingbasket.expireBasketsEverySeconds")
 }

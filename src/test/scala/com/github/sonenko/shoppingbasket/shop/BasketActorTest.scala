@@ -21,7 +21,7 @@ class BasketActorTest extends TestKit(ActorSystem("BasketActorTest")) with WordS
 
     def stopFn(act: ActorRef): Unit = {
       stopFunctionExecuted = true
-      self ! BasketActor.Commands.ByeBye
+      self ! BasketActor.Commands.ByeBye(false)
     }
 
     val basket = BasketActor.create(system, depot, stopFn)
@@ -90,8 +90,8 @@ class BasketActorTest extends TestKit(ActorSystem("BasketActorTest")) with WordS
     "execute stop function" in new Scope {
       basket.actor ! BasketActor.Commands.AddGood(goodId, 1)
       expectMsg(DepotActor.Commands.TakeGood(goodId, 1))
-      basket.actor ! BasketActor.Commands.ByeBye
-      expectMsg(BasketActor.Commands.ByeBye)
+      basket.actor ! BasketActor.Commands.ByeBye(false)
+      expectMsg(BasketActor.Commands.ByeBye(false))
       stopFunctionExecuted shouldEqual true
     }
   }

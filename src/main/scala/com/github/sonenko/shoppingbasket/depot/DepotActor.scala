@@ -27,14 +27,14 @@ class DepotActor extends Actor with ActorLogging {
             sender ! GoodRemoveFromDepotSuccess(good.copy(count = count))
           }
         }
-      case m@ DepotActor.Commands.PutGood(goodId, count) =>
+      case m@ DepotActor.Commands.PutGood(goodId, count, doReplay) =>
         ifGoodExists(goodId) { good =>
           state = state.map{
             case goodInDepot @ Good(`goodId`, _, _, oldCount, _, _) =>
               goodInDepot.copy(count = oldCount + count)
             case x => x
           }
-          sender ! GoodAddToDepotSuccess(good.copy(count = count))
+          if (doReplay) sender ! GoodAddToDepotSuccess(good.copy(count = count))
         }
     }
   }
@@ -78,10 +78,9 @@ object DepotActor {
 
   object Commands {
     case class TakeGood(goodId: UUID, count: Int) extends Command
-    case class PutGood(goodId: UUID, count: Int) extends Command
+    case class PutGood(goodId: UUID, count: Int, doReplay: Boolean = true) extends Command
     case object GetState extends Command
   }
-
 }
 
 trait Depot {
