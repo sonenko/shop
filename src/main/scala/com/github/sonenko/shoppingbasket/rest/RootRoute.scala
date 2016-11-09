@@ -26,7 +26,8 @@ class RootRoute(val log: LoggingAdapter, val stock: Stock, val basketManager: Ba
 
   def route = shoppingBasketRoute ~ productsRoute ~ adminRoute
 
-  def inquire(who: ActorRef, msg: Any): Future[HttpResponse] = inquireInternal(who, msg) map actorAnswerToRest
+  def inquire(who: ActorRef, msg: Any, pf: PartialFunction[Any, HttpResponse] = PartialFunction.empty): Future[HttpResponse] =
+    inquireInternal(who, msg).map(x => actorAnswerToRest(x , pf))
 
   private implicit def triple2Response(t: (StatusCode, ActorAnswer, List[HttpHeader])): HttpResponse = HttpResponse(
     status = t._1,
@@ -50,19 +51,21 @@ class RootRoute(val log: LoggingAdapter, val stock: Stock, val basketManager: Ba
   private def inquireInternal(who: ActorRef, msg: Any): Future[ActorAnswer] =
     ask(who, msg).mapTo[ActorAnswer]
 
-  private def actorAnswerToRest(actorAnswer: ActorAnswer): HttpResponse = actorAnswer match {
-    case msg: BasketManagerState => msg
-    case AddGoodToBasketSuccess(state) => StatusCodes.Created -> state
-    case msg: BasketState => msg
-    case Busy => StatusCodes.TooManyRequests -> "previous request in progress, be patient"
-    case msg: StockState => msg
-    case GoodNotFoundInStockError | GoodAmountIsLowInStockError => StatusCodes.BadRequest
-    case BasketNotFoundError => StatusCodes.BadRequest
-    case RemoveGoodFromBasketSuccess(state) => state
-    case BuySuccess => StatusCodes.NoContent
-    case x: ActorAnswer =>
-      val errorMsg = s"unexpected case class received to rest $x"
-      log.warning(errorMsg)
-      StatusCodes.InternalServerError -> errorMsg
+  private def actorAnswerToRest(actorAnswer: ActorAnswer, pf: PartialFunction[Any, HttpResponse]): HttpResponse = {
+    (pf orElse ({
+      case msg: BasketManagerState => msg
+      case AddGoodToBasketSuccess(state) => StatusCodes.Created -> state
+      case msg: BasketState => msg
+      case Busy => StatusCodes.TooManyRequests -> "previous request in progress, be patient"
+      case msg: StockState => msg
+      case GoodNotFoundInStockError | GoodAmountIsLowInStockError => StatusCodes.BadRequest
+      case BasketNotFoundError => StatusCodes.BadRequest
+      case RemoveGoodFromBasketSuccess(state) => state
+      case BasketDropSuccess => StatusCodes.NoContent
+      case x: ActorAnswer =>
+        val errorMsg = s"unexpected case class received to rest $x"
+        log.warning(errorMsg)
+        StatusCodes.InternalServerError -> errorMsg
+    }:PartialFunction[Any, HttpResponse])).apply(actorAnswer)
   }
 }
