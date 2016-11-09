@@ -24,7 +24,7 @@ class BasketActor(stock: Stock, stopSn: ActorRef => Unit) extends Actor with Act
         sender ! state
       case DropGood(goodId, count) =>
         ifGoodExistsInBasket(goodId){ goodInBasket =>
-          val goodsToRemoveCount = if (goodInBasket.count > count) goodInBasket.count - count else goodInBasket.count
+          val goodsToRemoveCount = if (goodInBasket.count > count) count else goodInBasket.count
           stock.actor ! StockActor.Commands.PutGood(goodId, goodsToRemoveCount)
           context.become(busy(sender))
         }
