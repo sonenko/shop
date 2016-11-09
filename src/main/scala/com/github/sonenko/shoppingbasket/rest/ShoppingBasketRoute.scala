@@ -5,8 +5,8 @@ import akka.http.scaladsl.model.headers.HttpCookie
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.github.sonenko.shoppingbasket.Config
-import com.github.sonenko.shoppingbasket.shop.ShopActor
-import com.github.sonenko.shoppingbasket.shop.basket.BasketActor
+import com.github.sonenko.shoppingbasket.basketmanager.BasketManagerActor
+import com.github.sonenko.shoppingbasket.basketmanager.basket.BasketActor
 
 
 trait ShoppingBasketRoute {
@@ -20,7 +20,7 @@ trait ShoppingBasketRoute {
       pathEndOrSingleSlash {
         get {
           complete {
-            inquire(shop.actor, ShopActor.Commands.ToBasket(
+            inquire(basketManager.actor, BasketManagerActor.Commands.ToBasket(
               basketId,
               BasketActor.Commands.GetState,
               false
@@ -30,7 +30,7 @@ trait ShoppingBasketRoute {
         post {
           entity(as[AddGood]) { addGood =>
             complete {
-              inquire(shop.actor, ShopActor.Commands.ToBasket(
+              inquire(basketManager.actor, BasketManagerActor.Commands.ToBasket(
                 basketId,
                 BasketActor.Commands.AddGood(addGood.goodId, addGood.count),
                 true
@@ -41,7 +41,7 @@ trait ShoppingBasketRoute {
         delete {
           entity(as[DropGood]) { dropGood =>
             complete {
-              inquire(shop.actor, ShopActor.Commands.ToBasket(
+              inquire(basketManager.actor, BasketManagerActor.Commands.ToBasket(
                 basketId,
                 BasketActor.Commands.DropGood(dropGood.goodId, dropGood.count),
                 false
@@ -52,7 +52,7 @@ trait ShoppingBasketRoute {
       } ~ path("buy") {
         post {
           complete {
-            inquire(shop.actor, ShopActor.Commands.Buy(basketId))
+            inquire(basketManager.actor, BasketManagerActor.Commands.Buy(basketId))
           }
         }
       }

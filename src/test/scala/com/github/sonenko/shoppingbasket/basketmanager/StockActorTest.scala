@@ -1,9 +1,9 @@
-package com.github.sonenko.shoppingbasket.shop
+package com.github.sonenko.shoppingbasket.basketmanager
 
 import akka.actor.ActorSystem
 import akka.testkit.{DefaultTimeout, ImplicitSender, TestKit}
 import com.github.sonenko.shoppingbasket.stock.StockActor
-import com.github.sonenko.shoppingbasket.{StockState, GoodAddToStockSuccess, GoodAmountIsLowInStockError, GoodNotFoundInStockError, GoodRemoveFromStockSuccess}
+import com.github.sonenko.shoppingbasket.{GoodAddToStockSuccess, GoodAmountIsLowInStockError, GoodNotFoundInStockError, GoodRemoveFromStockSuccess, StockState}
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 

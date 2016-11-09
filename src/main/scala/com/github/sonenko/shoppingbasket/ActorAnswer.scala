@@ -7,9 +7,9 @@ import org.joda.money.{CurrencyUnit, Money}
 
 sealed trait ActorAnswer
 
-// Shop
+// Basketmanager
 case class BasketCreateSuccess(basketId: UUID) extends ActorAnswer
-case class ShopState(basketIds: List[UUID]) extends ActorAnswer
+case class BasketManagerState(basketIds: List[UUID]) extends ActorAnswer
 case object BasketDropSuccess extends ActorAnswer
 case object BasketAlreadyExistsError extends ActorAnswer
 case object BasketNotFoundError extends ActorAnswer

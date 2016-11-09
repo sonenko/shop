@@ -6,8 +6,8 @@ import akka.event.LoggingAdapter
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.pattern.ask
+import com.github.sonenko.shoppingbasket.basketmanager.BasketManager
 import com.github.sonenko.shoppingbasket.stock.Stock
-import com.github.sonenko.shoppingbasket.shop.Shop
 import org.json4s.jackson.Serialization.write
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -19,9 +19,9 @@ import scala.language.implicitConversions
   *
   * @param log   - logger
   * @param stock - wrapper for StockActor
-  * @param shop  - wrapper for ShopActor
+  * @param basketManager  - wrapper for BasketManagerActor
   */
-class RootRoute(val log: LoggingAdapter, val stock: Stock, val shop: Shop) extends JsonProtocol
+class RootRoute(val log: LoggingAdapter, val stock: Stock, val basketManager: BasketManager) extends JsonProtocol
   with ShoppingBasketRoute with ProductsRoute with AdminRoute {
 
   def route = shoppingBasketRoute ~ productsRoute ~ adminRoute
@@ -51,7 +51,7 @@ class RootRoute(val log: LoggingAdapter, val stock: Stock, val shop: Shop) exten
     ask(who, msg).mapTo[ActorAnswer]
 
   private def actorAnswerToRest(actorAnswer: ActorAnswer): HttpResponse = actorAnswer match {
-    case msg: ShopState => msg
+    case msg: BasketManagerState => msg
     case AddGoodToBasketSuccess(state) => StatusCodes.Created -> state
     case msg: BasketState => msg
     case Busy => StatusCodes.TooManyRequests -> "previous request in progress, be patient"

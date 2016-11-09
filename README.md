@@ -1,5 +1,5 @@
 ## About (DO NOT USE! it is in development)
-Simple shop that can scale in seconds
+Simple Shopping Basket that able to scale in minutes :)
 
 #### Run application in dev mode
 simply run Main cass from IDE, or execute next commands from terminal
@@ -49,10 +49,3 @@ curl "http://localhost:7777/api/products" | python -m json.tool
 ```
 curl "http://localhost:7777/api/admin/sessions" --user admin:pwd -i
 ```
-
-// checkout
-
-// add + add + remove
-
-
-// FIX remove car
