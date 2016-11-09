@@ -45,7 +45,7 @@ class ShoppingBasketTest extends Integration {
       val cookeId = fetchCookieId(route)
       val body = jsonEntity(s"""{"goodId": "${java.util.UUID.randomUUID()}", "count": 0}""")
       Post("/api/shoppingbasket", body) ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
-        status shouldEqual StatusCodes.PermanentRedirect // TODO - should be BadRequest
+        status shouldEqual StatusCodes.BadRequest
       }
     }
     "respond with BadRequest if stock has not such ammount of goods" in new Scope {

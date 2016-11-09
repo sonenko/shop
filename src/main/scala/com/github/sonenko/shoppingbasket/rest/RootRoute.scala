@@ -51,7 +51,7 @@ class RootRoute(val log: LoggingAdapter, val stock: Stock, val basketManager: Ba
   private def inquireInternal(who: ActorRef, msg: Any): Future[ActorAnswer] =
     ask(who, msg).mapTo[ActorAnswer]
 
-  private def actorAnswerToRest(actorAnswer: ActorAnswer, pf: PartialFunction[Any, HttpResponse]): HttpResponse = {
+  private def actorAnswerToRest(actorAnswer: ActorAnswer, pf: PartialFunction[Any, HttpResponse]): HttpResponse =
     (pf orElse ({
       case msg: BasketManagerState => msg
       case AddGoodToBasketSuccess(state) => StatusCodes.Created -> state
@@ -67,5 +67,4 @@ class RootRoute(val log: LoggingAdapter, val stock: Stock, val basketManager: Ba
         log.warning(errorMsg)
         StatusCodes.InternalServerError -> errorMsg
     }:PartialFunction[Any, HttpResponse])).apply(actorAnswer)
-  }
 }
