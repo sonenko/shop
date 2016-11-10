@@ -33,22 +33,22 @@ trait ShoppingBasketRoute { this: RootRoute =>
             }
           } ~
           post {
-            entity(as[AddGood]) { addGood =>
+            entity(as[AddProduct]) { addProduct =>
               complete {
                 inquire(basketManager.actor, BasketManagerActor.Commands.ToBasket(
                   basketId,
-                  BasketActor.Commands.AddGood(addGood.goodId, addGood.count),
+                  BasketActor.Commands.AddProduct(addProduct.productId, addProduct.count),
                   true
                 ))
               }
             }
           } ~
           delete {
-            entity(as[DropGood]) { dropGood =>
+            entity(as[DropProduct]) { dropProduct =>
               complete {
                 inquire(basketManager.actor, BasketManagerActor.Commands.ToBasket(
                   basketId,
-                  BasketActor.Commands.DropGood(dropGood.goodId, dropGood.count),
+                  BasketActor.Commands.DropProduct(dropProduct.productId, dropProduct.count),
                   false
                 ))
               }

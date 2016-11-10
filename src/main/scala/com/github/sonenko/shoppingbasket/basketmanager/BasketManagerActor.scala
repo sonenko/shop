@@ -17,9 +17,9 @@ import scala.concurrent.duration._
 /**
   * Actor that manages baskets.
   * It will add new basket for each new user if user has at least one product.
-  * Actor also expire baskets it they are idle, and put goods back to stock in this case.
+  * Actor also expire baskets it they are idle, and put products back to stock in this case.
   * actor abilities:
-  * - create basket(implicitly when good added)
+  * - create basket(implicitly when product added)
   * - drop basket (exchange)
   * - drop basket, and put items to stock (reject / expire)
   * - show state

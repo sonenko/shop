@@ -9,7 +9,7 @@ import com.github.sonenko.shoppingbasket.stock.StockActor
   */
 class ProductsTest extends Integration {
   "GET /api/products" should {
-    "respond with `list of current goods` and status `OK` " in new Scope {
+    "respond with `list of current products` and status `OK` " in new Scope {
       Get("/api/products") ~> route ~> check {
         status shouldEqual StatusCodes.OK
         entityAs[StockState] shouldEqual StockState(StockActor.initialState)

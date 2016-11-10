@@ -6,18 +6,18 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, PoisonPill, P
 import com.github.sonenko.shoppingbasket._
 import com.github.sonenko.shoppingbasket.basketmanager.basket.BasketActor.Commands._
 import com.github.sonenko.shoppingbasket.basketmanager.basket.BasketActor._
-import com.github.sonenko.shoppingbasket.stock.{Good, Stock, StockActor}
+import com.github.sonenko.shoppingbasket.stock.{Prod, Stock, StockActor}
 import org.joda.time.DateTime
 
 /**
-  * Basket actor - represents current state of basket, every user that has at least one good has his own basket.
+  * Basket actor - represents current state of basket, every user that has at least one product has his own basket.
   * basket can:
   * - be closed
-  * - add good
-  * - remove good
+  * - add product
+  * - remove product
   * - view state
-  * It speaks to Stock, and ask if stock has specified good or not. if yes and stock has need count of goods
-  * basket takes this goods from stock.
+  * It speaks to Stock, and ask if stock has specified product or not. if yes and stock has need count of products
+  * basket takes this products from stock.
   * when basket closes - it sends items back to stock, if exchange rejected.
   * @param stock - wrapper for StockActor
   * @param stopSn - function that executes to shut down actor
@@ -27,71 +27,72 @@ class BasketActor(stock: Stock, stopSn: ActorRef => Unit) extends Actor with Act
 
   override def receive: Receive = {
     case c: Command => c match {
-      case ByeBye(putGoodsBack) =>
-        beforeStop(putGoodsBack)
+      case ByeBye(putProductBack) =>
+        beforeStop(putProductBack)
         stopSn(self)
-      case AddGood(goodId, count) =>
-        stock.actor ! StockActor.Commands.TakeGood(goodId, count)
+      case AddProduct(productId, count) =>
+        stock.actor ! StockActor.Commands.TakeProduct(productId, count)
         context.become(busy(sender))
       case GetState =>
         sender ! state
-      case DropGood(goodId, count) =>
-        ifGoodExistsInBasket(goodId){ goodInBasket =>
-          val goodsToRemoveCount = if (goodInBasket.count > count) count else goodInBasket.count
-          stock.actor ! StockActor.Commands.PutGood(goodId, goodsToRemoveCount)
+      case DropProduct(productId, count) =>
+        ifProductExistsInBasket(productId){ productInBasket =>
+          val productsToRemoveCount = if (productInBasket.count > count) count else productInBasket.count
+          stock.actor ! StockActor.Commands.PutProduct(productId, productsToRemoveCount)
           context.become(busy(sender))
         }
     }
   }
 
   def busy(sndr: ActorRef): Receive = {
-    case ByeBye(putGoodsBack) =>
-      beforeStop(putGoodsBack)
+    case ByeBye(putProductsBack) =>
+      beforeStop(putProductsBack)
       stopSn(self)
     case GetState =>
       sender ! state
-    case res@GoodRemoveFromStockSuccess(goodFromStock) =>
-      state.goods.find(_.id == goodFromStock.id) match {
+    case res@ProductRemoveFromStockSuccess(productFromStock) =>
+      state.products.find(_.id == productFromStock.id) match {
         case None =>
-          state = BasketState(goodFromStock :: state.goods)
-        case Some(oldGood) =>
-          val newGoods = state.goods.map(x =>
-            if (x.id == goodFromStock.id) oldGood.copy(count = oldGood.count + goodFromStock.count)
+          state = BasketState(productFromStock :: state.products)
+        case Some(oldProduct) =>
+          val newProducts = state.products.map(x =>
+            if (x.id == productFromStock.id) oldProduct.copy(count = oldProduct.count + productFromStock.count)
             else x
           )
-          state = BasketState(newGoods)
+          state = BasketState(newProducts)
       }
-      sndr ! AddGoodToBasketSuccess(state)
+      sndr ! AddProductToBasketSuccess(state)
       context.unbecome()
-    case res@(GoodNotFoundInStockError | GoodAmountIsLowInStockError) =>
+    case res@(ProductNotFoundInStockError | ProductAmountIsLowInStockError) =>
       sndr ! res
       context.unbecome()
-    case GoodAddToStockSuccess(removedGood) =>
-      val goodId = removedGood.id
-      val goodToRemove = state.goods.find(_.id == goodId).head
-      if (goodToRemove.count == removedGood.count) {
-        state = BasketState(state.goods.filter(_.id != goodId))
+    case ProductAddToStockSuccess(removedProduct) =>
+      val productId = removedProduct.id
+      val productToRemove = state.products.find(_.id == productId).head
+      if (productToRemove.count == removedProduct.count) {
+        state = BasketState(state.products.filter(_.id != productId))
       } else {
-        state = BasketState(state.goods.map {
-          case goodInBasket @ Good(`goodId`, _, _, oldCount, _, _) => goodInBasket.copy(count = oldCount - removedGood.count)
+        state = BasketState(state.products.map {
+          case productInBasket @ Prod(`productId`, _, _, oldCount, _, _) =>
+            productInBasket.copy(count = oldCount - removedProduct.count)
           case x => x
         })
       }
-      sndr ! RemoveGoodFromBasketSuccess(state)
+      sndr ! RemoveProductFromBasketSuccess(state)
       context.unbecome()
     case _: Command =>
       sender ! Busy
   }
 
-  def ifGoodExistsInBasket(goodId: UUID)(fn: Good => Unit): Unit = state.goods.find(_.id == goodId) match {
-    case None => sender ! RemoveGoodFromBasketErrorNotFountGood
-    case Some(goodInBasket) => fn(goodInBasket)
+  def ifProductExistsInBasket(productId: UUID)(fn: Prod => Unit): Unit = state.products.find(_.id == productId) match {
+    case None => sender ! ProductNotFoundRemoveFromBasketError
+    case Some(productInBasket) => fn(productInBasket)
   }
 
-  def beforeStop(putGoodsBack: Boolean) = {
-    if (putGoodsBack) {
-      state.goods.foreach(good => {
-        stock.actor ! StockActor.Commands.PutGood(good.id, good.count, false)
+  def beforeStop(putProductsBack: Boolean) = {
+    if (putProductsBack) {
+      state.products.foreach(product => {
+        stock.actor ! StockActor.Commands.PutProduct(product.id, product.count, false)
       })
     }
   }
@@ -105,9 +106,9 @@ object BasketActor {
   sealed trait Command
 
   object Commands {
-    case class ByeBye(putGoodsBack: Boolean) extends Command
-    case class AddGood(goodId: UUID, count: Int) extends Command
-    case class DropGood(goodId: UUID, count: Int) extends Command
+    case class ByeBye(putProductsBack: Boolean) extends Command
+    case class AddProduct(productId: UUID, count: Int) extends Command
+    case class DropProduct(productId: UUID, count: Int) extends Command
     case object GetState extends Command
   }
 }

@@ -32,9 +32,9 @@ trait JsonProtocol extends DefaultJsonFormats with Json4sSupport {
   implicit val formats = DefaultFormats + ext.UUIDSerializer + ext.URLSerializer + JodaMoneySerializer + UUIDKeyJSonSerializer
 }
 
-case class AddGood(goodId: UUID, count: Int) {
+case class AddProduct(productId: UUID, count: Int) {
   require(count >= 1)
 }
-case class DropGood(goodId: UUID, count: Int) {
+case class DropProduct(productId: UUID, count: Int) {
   require(count >= 1)
 }

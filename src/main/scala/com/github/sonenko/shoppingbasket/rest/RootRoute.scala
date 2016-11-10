@@ -45,14 +45,15 @@ class RootRoute(val log: LoggingAdapter, val stock: Stock, val basketManager: Ba
   private def actorAnswerToRest(actorAnswer: ActorAnswer, pf: PartialFunction[Any, HttpResponse]): HttpResponse =
     (pf orElse ({
       case msg: BasketManagerState => StatusCodes.OK -> msg
-      case AddGoodToBasketSuccess(state) => StatusCodes.Created -> state
+      case AddProductToBasketSuccess(state) => StatusCodes.Created -> state
       case msg: BasketState => StatusCodes.OK -> msg
       case Busy => StatusCodes.TooManyRequests -> "previous request in progress, be patient"
       case msg: StockState => StatusCodes.OK -> msg
-      case GoodNotFoundInStockError => StatusCodes.BadRequest -> "product with specified id not fount is stock"
-      case GoodAmountIsLowInStockError => StatusCodes.BadRequest -> "stock does not contain so many products"
+      case ProductNotFoundInStockError => StatusCodes.BadRequest -> "product with specified id not fount is stock"
+      case ProductAmountIsLowInStockError => StatusCodes.BadRequest -> "stock does not contain so many products"
+      case ProductNotFoundRemoveFromBasketError => StatusCodes.BadRequest -> "product to remove not found"
       case BasketNotFoundError => StatusCodes.BadRequest
-      case RemoveGoodFromBasketSuccess(state) => StatusCodes.OK -> state
+      case RemoveProductFromBasketSuccess(state) => StatusCodes.OK -> state
       case BasketDropSuccess => StatusCodes.NoContent
       case x: ActorAnswer =>
         val errorMsg = s"unexpected case class received to rest $x"
