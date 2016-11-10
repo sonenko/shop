@@ -21,6 +21,15 @@ sbt
 test
 ```
 
+#### Generate test-coverage report
+```
+sbt
+coverageEnabled := true
+clean
+test
+coverageReport
+```
+
 ## curl endpoints examples
 #### Basket rest endpoints
 ```
