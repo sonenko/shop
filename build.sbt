@@ -45,3 +45,5 @@ libraryDependencies ++= List(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaV % "test",
   "com.typesafe.akka" %% "akka-testkit" % akkaV % "test"
 )
+
+coverageEnabled := false
