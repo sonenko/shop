@@ -2,7 +2,7 @@ package com.github.sonenko.shoppingbasket
 
 import java.util.UUID
 
-import com.github.sonenko.shoppingbasket.stock.Good
+import com.github.sonenko.shoppingbasket.stock.Prod
 import org.joda.money.{CurrencyUnit, Money}
 
 sealed trait ActorAnswer
@@ -15,22 +15,22 @@ case object BasketAlreadyExistsError extends ActorAnswer
 case object BasketNotFoundError extends ActorAnswer
 
 // Basket
-case class AddGoodToBasketSuccess(state: BasketState) extends ActorAnswer
-case class RemoveGoodFromBasketSuccess(state: BasketState) extends ActorAnswer
-case object RemoveGoodFromBasketErrorNotFountGood extends ActorAnswer
-case class BasketState(goods: List[Good], total: Money) extends ActorAnswer
+case class AddProductToBasketSuccess(state: BasketState) extends ActorAnswer
+case class RemoveProductFromBasketSuccess(state: BasketState) extends ActorAnswer
+case object ProductNotFoundRemoveFromBasketError extends ActorAnswer
+case class BasketState(products: List[Prod], total: Money) extends ActorAnswer
 object BasketState {
-  def apply(goods: List[Good]): BasketState = BasketState(
-    goods = goods,
-    goods.foldLeft(Money.ofMinor(CurrencyUnit.USD, 0L))((acc: Money, good: Good) =>
-      acc.plus(good.price.multipliedBy(good.count)))
+  def apply(products: List[Prod]): BasketState = BasketState(
+    products = products,
+    products.foldLeft(Money.ofMinor(CurrencyUnit.USD, 0L))((acc: Money, product: Prod) =>
+      acc.plus(product.price.multipliedBy(product.count)))
   )
 }
 case object Busy extends ActorAnswer
 
 // Stock
-case class StockState(goods: List[Good]) extends ActorAnswer
-case object GoodNotFoundInStockError extends ActorAnswer
-case object GoodAmountIsLowInStockError extends ActorAnswer
-case class GoodRemoveFromStockSuccess(good: Good) extends ActorAnswer
-case class GoodAddToStockSuccess(good: Good) extends ActorAnswer
+case class StockState(products: List[Prod]) extends ActorAnswer
+case object ProductNotFoundInStockError extends ActorAnswer
+case object ProductAmountIsLowInStockError extends ActorAnswer
+case class ProductRemoveFromStockSuccess(product: Prod) extends ActorAnswer
+case class ProductAddToStockSuccess(product: Prod) extends ActorAnswer

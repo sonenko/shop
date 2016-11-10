@@ -15,8 +15,8 @@ class BasketActorTest extends TestKit(ActorSystem("BasketActorTest")) with WordS
     val stock = new Stock {
       override val actor = self
     }
-    val good = StockActor.initialState.head
-    val goodId = good.id
+    val product = StockActor.initialState.head
+    val productId = product.id
     var stopFunctionExecuted = false
 
     def stopFn(act: ActorRef): Unit = {
@@ -26,49 +26,49 @@ class BasketActorTest extends TestKit(ActorSystem("BasketActorTest")) with WordS
 
     val basket = BasketActor.create(system, stock, stopFn)
 
-    def addGood(): Unit = {
-      basket.actor ! BasketActor.Commands.AddGood(goodId, 1)
-      expectMsg(StockActor.Commands.TakeGood(goodId, 1))
-      val goodInBasket = good.copy(count = 1)
-      basket.actor ! GoodRemoveFromStockSuccess(goodInBasket)
-      expectMsg(AddGoodToBasketSuccess(BasketState(List(goodInBasket))))
+    def addProduct(): Unit = {
+      basket.actor ! BasketActor.Commands.AddProduct(productId, 1)
+      expectMsg(StockActor.Commands.TakeProduct(productId, 1))
+      val productInBasket = product.copy(count = 1)
+      basket.actor ! ProductRemoveFromStockSuccess(productInBasket)
+      expectMsg(AddProductToBasketSuccess(BasketState(List(productInBasket))))
     }
   }
 
-  "BasketActor.Commands.AddGood" should {
-    "send request to Stock" in new Scope {
+  "BasketActor.Commands.AddProduct" should {
+    "forward request to Stock" in new Scope {
       val count = 1
-      basket.actor ! BasketActor.Commands.AddGood(goodId, count)
-      expectMsg(StockActor.Commands.TakeGood(goodId, count))
+      basket.actor ! BasketActor.Commands.AddProduct(productId, count)
+      expectMsg(StockActor.Commands.TakeProduct(productId, count))
     }
     "send request to stock and became unavailable" in new Scope {
       val count = 1
-      basket.actor ! BasketActor.Commands.AddGood(goodId, count)
-      expectMsg(StockActor.Commands.TakeGood(goodId, count))
-      basket.actor ! BasketActor.Commands.AddGood(java.util.UUID.randomUUID(), count)
+      basket.actor ! BasketActor.Commands.AddProduct(productId, count)
+      expectMsg(StockActor.Commands.TakeProduct(productId, count))
+      basket.actor ! BasketActor.Commands.AddProduct(java.util.UUID.randomUUID(), count)
       expectMsg(Busy)
     }
   }
 
-  "BasketActor.Commands.DropGood" should {
-    "send request to Stock" in new Scope {
+  "BasketActor.Commands.DropProduct" should {
+    "replay ProductNotFoundRemoveFromBasketError if product not in basket" in new Scope {
       val count = 1
-      basket.actor ! BasketActor.Commands.DropGood(goodId, count)
-      expectMsg(RemoveGoodFromBasketErrorNotFountGood)
+      basket.actor ! BasketActor.Commands.DropProduct(productId, count)
+      expectMsg(ProductNotFoundRemoveFromBasketError)
     }
     "send request to stock and became unavailable" in new Scope {
-      addGood()
-      basket.actor ! BasketActor.Commands.DropGood(goodId, 1)
-      expectMsg(StockActor.Commands.PutGood(goodId, 1))
-      basket.actor ! BasketActor.Commands.DropGood(goodId, 1)
+      addProduct()
+      basket.actor ! BasketActor.Commands.DropProduct(productId, 1)
+      expectMsg(StockActor.Commands.PutProduct(productId, 1))
+      basket.actor ! BasketActor.Commands.DropProduct(productId, 1)
       expectMsg(Busy)
     }
-    "remove all goods if count more then exists" in new Scope {
-      addGood()
-      basket.actor ! BasketActor.Commands.DropGood(goodId, 10)
-      expectMsg(StockActor.Commands.PutGood(goodId, 1))
-      basket.actor ! GoodAddToStockSuccess(good.copy(count = 1))
-      expectMsg(RemoveGoodFromBasketSuccess(BasketState(Nil)))
+    "remove all products if count more then exists" in new Scope {
+      addProduct()
+      basket.actor ! BasketActor.Commands.DropProduct(productId, 10)
+      expectMsg(StockActor.Commands.PutProduct(productId, 1))
+      basket.actor ! ProductAddToStockSuccess(product.copy(count = 1))
+      expectMsg(RemoveProductFromBasketSuccess(BasketState(Nil)))
     }
   }
 
@@ -78,8 +78,8 @@ class BasketActorTest extends TestKit(ActorSystem("BasketActorTest")) with WordS
       expectMsg(BasketState(Nil))
     }
     "replay with current state when busy" in new Scope {
-      basket.actor ! BasketActor.Commands.AddGood(goodId, 1) // to became busy
-      expectMsg(StockActor.Commands.TakeGood(goodId, 1))
+      basket.actor ! BasketActor.Commands.AddProduct(productId, 1) // to became busy
+      expectMsg(StockActor.Commands.TakeProduct(productId, 1))
       basket.actor ! BasketActor.Commands.GetState // still busy
       expectMsg(BasketState(Nil))
     }
@@ -88,56 +88,56 @@ class BasketActorTest extends TestKit(ActorSystem("BasketActorTest")) with WordS
   // busy
   "when busy BasketActor.Commands.ByeBye" should {
     "execute stop function" in new Scope {
-      basket.actor ! BasketActor.Commands.AddGood(goodId, 1)
-      expectMsg(StockActor.Commands.TakeGood(goodId, 1))
+      basket.actor ! BasketActor.Commands.AddProduct(productId, 1)
+      expectMsg(StockActor.Commands.TakeProduct(productId, 1))
       basket.actor ! BasketActor.Commands.ByeBye(false)
       expectMsg(BasketActor.Commands.ByeBye(false))
       stopFunctionExecuted shouldEqual true
     }
   }
-  "when busy GoodRemoveFromStockSuccess" should {
-    "add good to basket if basket has not same good" in new Scope {
-      basket.actor ! BasketActor.Commands.AddGood(goodId, 1)
-      expectMsg(StockActor.Commands.TakeGood(goodId, 1))
-      val goodInBasket = good.copy(count = 1)
-      basket.actor ! GoodRemoveFromStockSuccess(goodInBasket)
-      expectMsg(AddGoodToBasketSuccess(BasketState(List(goodInBasket))))
+  "when busy ProductRemoveFromStockSuccess" should {
+    "add product to basket if basket has not same product" in new Scope {
+      basket.actor ! BasketActor.Commands.AddProduct(productId, 1)
+      expectMsg(StockActor.Commands.TakeProduct(productId, 1))
+      val productInBasket = product.copy(count = 1)
+      basket.actor ! ProductRemoveFromStockSuccess(productInBasket)
+      expectMsg(AddProductToBasketSuccess(BasketState(List(productInBasket))))
     }
-    "increment good count in basket if basket has same good" in new Scope {
-      basket.actor ! BasketActor.Commands.AddGood(goodId, 1) // to became busy
-      expectMsg(StockActor.Commands.TakeGood(goodId, 1))
-      val goodInBasket = good.copy(count = 1)
-      basket.actor ! GoodRemoveFromStockSuccess(goodInBasket)
-      expectMsg(AddGoodToBasketSuccess(BasketState(List(goodInBasket))))
+    "increment product count in basket if basket has same product" in new Scope {
+      basket.actor ! BasketActor.Commands.AddProduct(productId, 1) // to became busy
+      expectMsg(StockActor.Commands.TakeProduct(productId, 1))
+      val productInBasket = product.copy(count = 1)
+      basket.actor ! ProductRemoveFromStockSuccess(productInBasket)
+      expectMsg(AddProductToBasketSuccess(BasketState(List(productInBasket))))
       // send iteration
-      basket.actor ! BasketActor.Commands.AddGood(goodId, 1) // to became busy
-      expectMsg(StockActor.Commands.TakeGood(goodId, 1))
-      basket.actor ! GoodRemoveFromStockSuccess(goodInBasket)
-      expectMsg(AddGoodToBasketSuccess(BasketState(List(goodInBasket.copy(count = 2)))))
+      basket.actor ! BasketActor.Commands.AddProduct(productId, 1) // to became busy
+      expectMsg(StockActor.Commands.TakeProduct(productId, 1))
+      basket.actor ! ProductRemoveFromStockSuccess(productInBasket)
+      expectMsg(AddProductToBasketSuccess(BasketState(List(productInBasket.copy(count = 2)))))
     }
   }
 
-  "when busy GoodNotFoundInStockError" should {
+  "when busy ProductNotFoundInStockError" should {
     "forward message end unbecome" in new Scope {
-      basket.actor ! BasketActor.Commands.AddGood(goodId, 1) // to became busy
-      expectMsg(StockActor.Commands.TakeGood(goodId, 1))
-      basket.actor ! GoodNotFoundInStockError
-      expectMsg(GoodNotFoundInStockError)
+      basket.actor ! BasketActor.Commands.AddProduct(productId, 1) // to became busy
+      expectMsg(StockActor.Commands.TakeProduct(productId, 1))
+      basket.actor ! ProductNotFoundInStockError
+      expectMsg(ProductNotFoundInStockError)
       // check if unbecome
-      basket.actor ! BasketActor.Commands.AddGood(goodId, 1) // to became busy
-      expectMsg(StockActor.Commands.TakeGood(goodId, 1))
+      basket.actor ! BasketActor.Commands.AddProduct(productId, 1) // to became busy
+      expectMsg(StockActor.Commands.TakeProduct(productId, 1))
     }
   }
 
-  "when busy GoodAmountIsLowInStockError" should {
+  "when busy ProductAmountIsLowInStockError" should {
     "forward message end unbecome" in new Scope {
-      basket.actor ! BasketActor.Commands.AddGood(goodId, 2) // to became busy
-      expectMsg(StockActor.Commands.TakeGood(goodId, 2))
-      basket.actor ! GoodAmountIsLowInStockError
-      expectMsg(GoodAmountIsLowInStockError)
+      basket.actor ! BasketActor.Commands.AddProduct(productId, 2) // to became busy
+      expectMsg(StockActor.Commands.TakeProduct(productId, 2))
+      basket.actor ! ProductAmountIsLowInStockError
+      expectMsg(ProductAmountIsLowInStockError)
       // check if unbecome
-      basket.actor ! BasketActor.Commands.AddGood(goodId, 2) // to became busy
-      expectMsg(StockActor.Commands.TakeGood(goodId, 2))
+      basket.actor ! BasketActor.Commands.AddProduct(productId, 2) // to became busy
+      expectMsg(StockActor.Commands.TakeProduct(productId, 2))
     }
   }
 }

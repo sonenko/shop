@@ -10,8 +10,8 @@ import com.github.sonenko.shoppingbasket.{BasketState, Config, StockState}
   */
 class AdminTest extends Integration {
 
-  val good = StockActor.initialState.head.copy(count = 1)
-  val goodId = good.id
+  val product = StockActor.initialState.head.copy(count = 1)
+  val productId = product.id
 
   "GET /api/admin/baskets" should {
     "respond with status `Unauthorized` if no credentials provided" in new Scope {
@@ -24,7 +24,7 @@ class AdminTest extends Integration {
         status shouldEqual StatusCodes.Unauthorized
       }
     }
-    "respond with status OK and return empty array if good credentials" in new Scope {
+    "respond with status OK and return empty array if product credentials" in new Scope {
       Get("/api/admin/baskets") ~> addCredentials(BasicHttpCredentials("admin", "pwd")) ~> route ~> check {
         status shouldEqual StatusCodes.OK
         responseAs[StockState] shouldEqual StockState(Nil)
@@ -41,14 +41,14 @@ class AdminTest extends Integration {
     "return State of basket in happy case" in new Scope {
       // create basket
       val cookeId = fetchCookieId(route)
-      val body = jsonEntity(s"""{"goodId": "$goodId", "count": 2}""")
+      val body = jsonEntity(s"""{"productId": "$productId", "count": 2}""")
       Post("/api/shoppingbasket", body) ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
         status shouldEqual StatusCodes.Created
       }
       // check it
       Get(s"/api/admin/baskets/$cookeId") ~> addCredentials(BasicHttpCredentials("admin", "pwd")) ~> route ~> check {
         status shouldEqual StatusCodes.OK
-        responseAs[BasketState] shouldEqual BasketState(List(good.copy(count = 2)))
+        responseAs[BasketState] shouldEqual BasketState(List(product.copy(count = 2)))
       }
     }
   }
@@ -63,16 +63,16 @@ class AdminTest extends Integration {
       val count = 2
       // create basket
       val cookeId = fetchCookieId(route)
-      val body = jsonEntity(s"""{"goodId": "$goodId", "count": $count}""")
+      val body = jsonEntity(s"""{"productId": "$productId", "count": $count}""")
       Post("/api/shoppingbasket", body) ~> addHeader(Cookie(Config.cookieNameForSession, cookeId)) ~> route ~> check {
         status shouldEqual StatusCodes.Created
       }
-      // good should not be in stock
+      // product should not be in stock
       Get("/api/products") ~> route ~> check {
         status shouldEqual StatusCodes.OK
-        val initialGood = StockActor.initialState.head
-        entityAs[StockState].goods.head.id shouldEqual initialGood.id
-        entityAs[StockState].goods.head.count shouldEqual (initialGood.count - count)
+        val initialProduct = StockActor.initialState.head
+        entityAs[StockState].products.head.id shouldEqual initialProduct.id
+        entityAs[StockState].products.head.count shouldEqual (initialProduct.count - count)
       }
 
       // meaning exchange
@@ -84,12 +84,12 @@ class AdminTest extends Integration {
       Get(s"/api/admin/baskets/$cookeId") ~> addCredentials(BasicHttpCredentials("admin", "pwd")) ~> route ~> check {
         status shouldEqual StatusCodes.NotFound
       }
-      // good should not be in stock
+      // product should not be in stock
       Get("/api/products") ~> route ~> check {
         status shouldEqual StatusCodes.OK
-        val initialGood = StockActor.initialState.head
-        entityAs[StockState].goods.head.id shouldEqual initialGood.id
-        entityAs[StockState].goods.head.count shouldEqual (initialGood.count - count)
+        val initialProduct = StockActor.initialState.head
+        entityAs[StockState].products.head.id shouldEqual initialProduct.id
+        entityAs[StockState].products.head.count shouldEqual (initialProduct.count - count)
       }
     }
   }
