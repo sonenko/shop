@@ -27,6 +27,7 @@ object BasketState {
   )
 }
 case object Busy extends ActorAnswer
+case object GotMeIWillDieAfterDielsWithStock extends ActorAnswer
 
 // Stock
 case class StockState(products: List[Prod]) extends ActorAnswer

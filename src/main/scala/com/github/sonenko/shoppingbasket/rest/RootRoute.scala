@@ -48,6 +48,7 @@ class RootRoute(val log: LoggingAdapter, val stock: Stock, val basketManager: Ba
       case AddProductToBasketSuccess(state) => StatusCodes.Created -> state
       case msg: BasketState => StatusCodes.OK -> msg
       case Busy => StatusCodes.TooManyRequests -> "previous request in progress, be patient"
+      case GotMeIWillDieAfterDielsWithStock => StatusCodes.TooManyRequests -> "basket mostly removed"
       case msg: StockState => StatusCodes.OK -> msg
       case ProductNotFoundInStockError => StatusCodes.BadRequest -> "product with specified id not fount is stock"
       case ProductAmountIsLowInStockError => StatusCodes.BadRequest -> "stock does not contain so many products"

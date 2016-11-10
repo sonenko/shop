@@ -2,8 +2,9 @@ package com.github.sonenko.shoppingbasket.basketmanager
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{DefaultTimeout, ImplicitSender, TestKit}
-import com.github.sonenko.shoppingbasket._
+import com.github.sonenko.shoppingbasket.{ProductRemoveFromStockSuccess, _}
 import com.github.sonenko.shoppingbasket.basketmanager.basket.BasketActor
+import com.github.sonenko.shoppingbasket.basketmanager.basket.BasketActor.Commands.ByeBye
 import com.github.sonenko.shoppingbasket.stock.{Stock, StockActor}
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
@@ -87,12 +88,13 @@ class BasketActorTest extends TestKit(ActorSystem("BasketActorTest")) with WordS
 
   // busy
   "when busy BasketActor.Commands.ByeBye" should {
-    "execute stop function" in new Scope {
+    "execute replay Busy" in new Scope {
       basket.actor ! BasketActor.Commands.AddProduct(productId, 1)
       expectMsg(StockActor.Commands.TakeProduct(productId, 1))
       basket.actor ! BasketActor.Commands.ByeBye(false)
-      expectMsg(BasketActor.Commands.ByeBye(false))
-      stopFunctionExecuted shouldEqual true
+      expectMsg(GotMeIWillDieAfterDielsWithStock)
+      basket.actor ! BasketActor.Commands.ByeBye(false)
+      expectMsg(Busy)
     }
   }
   "when busy ProductRemoveFromStockSuccess" should {
@@ -139,5 +141,27 @@ class BasketActorTest extends TestKit(ActorSystem("BasketActorTest")) with WordS
       basket.actor ! BasketActor.Commands.AddProduct(productId, 2) // to became busy
       expectMsg(StockActor.Commands.TakeProduct(productId, 2))
     }
+  }
+
+  "tricky case" in new Scope {
+    basket.actor ! BasketActor.Commands.AddProduct(productId, 2) // should became busy
+    expectMsg(StockActor.Commands.TakeProduct(productId, 2)) // message to Stock
+    basket.actor ! BasketActor.Commands.AddProduct(productId, 2) // trying to add more
+    expectMsg(Busy) // receive Busy because we didn't receive message from stock
+    basket.actor ! BasketActor.Commands.AddProduct(productId, 2) // yes it is busy but again
+    expectMsg(Busy) // busy again, ok
+    basket.actor ! ByeBye(true) // lets try to kill busy basket
+    expectMsg(GotMeIWillDieAfterDielsWithStock) // can not kill, but it will dye
+    basket.actor ! ByeBye(true) // lets try to kill one more time
+    expectMsg(Busy) // well it is busy, we can not kill basket twice, ok
+    basket.actor ! BasketActor.Commands.AddProduct(productId, 2) // trying to add more
+    expectMsg(Busy) // sure, it is busy
+    // STOCK REPLAY
+    basket.actor ! ProductRemoveFromStockSuccess(product.copy(count = 2)) // stock replay with happy case
+    expectMsg(AddProductToBasketSuccess(BasketState(List(product.copy(count = 2))))) // yes before basket die it updates state and replay
+    expectMsg(StockActor.Commands.PutProduct(productId, 2, false)) // put back items to stock
+    expectMsg(ByeBye(false)) // executing stopFn
+    expectNoMsg()
+    stopFunctionExecuted = true
   }
 }
