@@ -46,42 +46,42 @@ class BasketActor(stock: Stock, stopSn: ActorRef => Unit) extends Actor with Act
 
   def busy(sndr: ActorRef): Receive = {
     case ByeBye(putProductsBack) =>
-      beforeStop(putProductsBack)
-      stopSn(self)
+      context.become(busyDying(sndr, putProductsBack))
+      sender ! GotMeIWillDieAfterDielsWithStock
     case GetState =>
       sender ! state
-    case res@ProductRemoveFromStockSuccess(productFromStock) =>
-      state.products.find(_.id == productFromStock.id) match {
-        case None =>
-          state = BasketState(productFromStock :: state.products)
-        case Some(oldProduct) =>
-          val newProducts = state.products.map(x =>
-            if (x.id == productFromStock.id) oldProduct.copy(count = oldProduct.count + productFromStock.count)
-            else x
-          )
-          state = BasketState(newProducts)
-      }
-      sndr ! AddProductToBasketSuccess(state)
+    case msg: ProductRemoveFromStockSuccess =>
+      on(sndr, msg)
+    case msg @ ProductNotFoundInStockError =>
+      sndr ! msg
       context.unbecome()
-    case res@(ProductNotFoundInStockError | ProductAmountIsLowInStockError) =>
-      sndr ! res
+    case msg @ ProductAmountIsLowInStockError =>
+      sndr ! msg
       context.unbecome()
-    case ProductAddToStockSuccess(removedProduct) =>
-      val productId = removedProduct.id
-      val productToRemove = state.products.find(_.id == productId).head
-      if (productToRemove.count == removedProduct.count) {
-        state = BasketState(state.products.filter(_.id != productId))
-      } else {
-        state = BasketState(state.products.map {
-          case productInBasket @ Prod(`productId`, _, _, oldCount, _, _) =>
-            productInBasket.copy(count = oldCount - removedProduct.count)
-          case x => x
-        })
-      }
-      sndr ! RemoveProductFromBasketSuccess(state)
-      context.unbecome()
+    case msg: ProductAddToStockSuccess =>
+      on(sndr, msg)
     case _: Command =>
       sender ! Busy
+  }
+
+  def busyDying(sndr: ActorRef, putProductsBack: Boolean): Receive = {
+    case msg: ProductRemoveFromStockSuccess =>
+      on(sndr, msg)
+      context.unbecome()
+      self ! ByeBye(putProductsBack)
+    case msg @ ProductNotFoundInStockError =>
+      on(sndr, msg)
+      context.unbecome()
+      self ! ByeBye(putProductsBack)
+    case msg @ ProductAmountIsLowInStockError =>
+      on(sndr, msg)
+      context.unbecome()
+      self ! ByeBye(putProductsBack)
+    case msg: ProductAddToStockSuccess =>
+      on(sndr, msg)
+      context.unbecome()
+      self ! ByeBye(putProductsBack)
+    case _: Command => sender ! Busy
   }
 
   def ifProductExistsInBasket(productId: UUID)(fn: Prod => Unit): Unit = state.products.find(_.id == productId) match {
@@ -95,6 +95,47 @@ class BasketActor(stock: Stock, stopSn: ActorRef => Unit) extends Actor with Act
         stock.actor ! StockActor.Commands.PutProduct(product.id, product.count, false)
       })
     }
+  }
+
+  def on(sndr: ActorRef, msg: ProductRemoveFromStockSuccess): Unit = {
+    val productFromStock = msg.product
+    state.products.find(_.id == productFromStock.id) match {
+      case None =>
+        state = BasketState(productFromStock :: state.products)
+      case Some(oldProduct) =>
+        val newProducts = state.products.map(x =>
+          if (x.id == productFromStock.id) oldProduct.copy(count = oldProduct.count + productFromStock.count)
+          else x
+        )
+        state = BasketState(newProducts)
+    }
+    sndr ! AddProductToBasketSuccess(state)
+    context.unbecome()
+  }
+
+  def on(sndr: ActorRef, msg: ProductAddToStockSuccess): Unit = {
+    val removedProduct = msg.product
+    val productId = removedProduct.id
+    val productToRemove = state.products.find(_.id == productId).head
+    if (productToRemove.count == removedProduct.count) {
+      state = BasketState(state.products.filter(_.id != productId))
+    } else {
+      state = BasketState(state.products.map {
+        case productInBasket @ Prod(`productId`, _, _, oldCount, _, _) =>
+          productInBasket.copy(count = oldCount - removedProduct.count)
+        case x => x
+      })
+    }
+    sndr ! RemoveProductFromBasketSuccess(state)
+    context.unbecome()
+  }
+
+  def on(sndr: ActorRef, msg: ProductNotFoundInStockError.type): Unit = {
+    sndr ! msg
+  }
+
+  def on(sndr: ActorRef, msg: ProductAmountIsLowInStockError.type): Unit = {
+    sndr ! msg
   }
 }
 
