@@ -6,17 +6,23 @@ import akka.http.scaladsl.model.headers.{BasicHttpCredentials, Cookie, `Set-Cook
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.testkit.TestKit
 import com.github.sonenko.shoppingbasket.rest.JsonProtocol
 import com.github.sonenko.shoppingbasket.stock.StockActor
 import com.github.sonenko.shoppingbasket.{BasketState, Config, Constructor, StockState}
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 
 /** trait to mix for writing integration tests, it mock nothing, but simply run routes, very close to end2end
   */
-trait Integration extends WordSpec with Matchers with ScalatestRouteTest with JsonProtocol {
+trait Integration extends WordSpec with Matchers with ScalatestRouteTest with JsonProtocol with BeforeAndAfterAll {
+
+  override def afterAll {
+    TestKit.shutdownActorSystem(system)
+  }
 
   trait Scope {
-    val route: Route = Route.seal(new Constructor().route)
+    val constr = new Constructor()
+    val route: Route = Route.seal(constr.route)
   }
 
   val initialCountOfFirstProductsInStock = StockActor.initialState.head.count
