@@ -65,6 +65,8 @@ class BasketActor(stock: Stock, stopSn: ActorRef => Unit) extends Actor with Act
   }
 
   def busyDying(sndr: ActorRef, putProductsBack: Boolean): Receive = {
+    case GetState =>
+      sender ! state
     case msg: ProductRemoveFromStockSuccess =>
       on(sndr, msg)
       context.unbecome()
@@ -157,6 +159,7 @@ object BasketActor {
 trait Basket {
   val actor: ActorRef
   val updatedAt: DateTime = DateTime.now()
+  def isExpired: Boolean = updatedAt.plusSeconds(Config.expireBasketsEverySeconds).isBefore(DateTime.now)
   def updated = new Basket{
     override val actor = Basket.this.actor
   }

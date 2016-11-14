@@ -12,15 +12,13 @@ import com.github.sonenko.shoppingbasket.stock.StockActor
 /** Entry point
   */
 object Main extends App {
-  new Constructor().start()
+  new Constructor()(ActorSystem("Shopping-basket-system")).start()
 }
 
 /** Creates instances of all parts of the application and finally starts akka.http server that routes with RootRoute
   */
-class Constructor {
-  implicit val system = ActorSystem("shopping-basket-system")
+class Constructor(implicit val system: ActorSystem) {
   implicit val materializer = ActorMaterializer()
-
   import system.dispatcher
 
   val log = Logging.getLogger(system, this)

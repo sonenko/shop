@@ -3,13 +3,12 @@ package basketmanager
 
 import java.util.UUID
 
-import akka.actor.{Actor, ActorRef, ActorRefFactory, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, Props}
 import com.github.sonenko.shoppingbasket.basketmanager.BasketManagerActor.Commands.{ExpireBaskets, _}
 import com.github.sonenko.shoppingbasket.basketmanager.BasketManagerActor._
 import com.github.sonenko.shoppingbasket.basketmanager.basket.BasketActor.Commands.ByeBye
 import com.github.sonenko.shoppingbasket.basketmanager.basket.{Basket, BasketActor}
 import com.github.sonenko.shoppingbasket.stock.Stock
-import org.joda.time.DateTime
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -27,11 +26,13 @@ import scala.concurrent.duration._
   * @param stock - StockActor wrapper
   * @param createBasketFunc - function that creates basket
   */
-class BasketManagerActor(stock: Stock, createBasketFunc: (ActorRefFactory, Stock) => Basket) extends Actor {
+class BasketManagerActor(stock: Stock, createBasketFunc: (ActorRefFactory, Stock) => Basket) extends Actor with ActorLogging {
   var baskets: Map[UUID, Basket] = Map()
   val expire = Config.expireBasketsEverySeconds
 
-  context.system.scheduler.schedule(expire seconds, expire seconds)(self ! BasketManagerActor.Commands.ExpireBaskets)
+  context.system.scheduler.schedule(expire seconds, expire seconds){
+    self ! BasketManagerActor.Commands.ExpireBaskets
+  }
 
   override def receive: Receive = {
     case c: Command => c match {
@@ -50,9 +51,10 @@ class BasketManagerActor(stock: Stock, createBasketFunc: (ActorRefFactory, Stock
       case GetState =>
         sender ! BasketManagerState(baskets.keys.toList)
       case ExpireBaskets =>
-        val (newBaskets, toEraseBaskets) = baskets.partition(_._2.updatedAt.plusSeconds(expire).isAfter(DateTime.now()))
+        val (expiredBaskets, newBaskets) = baskets.partition(_._2.isExpired)
+        log.debug(s"BasketManagerActor received ExpireBaskets, newBaskets -> ${newBaskets.keys}; expiredBaskets -> ${expiredBaskets.keys}")
         baskets = newBaskets
-        toEraseBaskets.foreach(x => x._2.actor ! ByeBye(true))
+        expiredBaskets.foreach(x => x._2.actor ! ByeBye(true))
     }
   }
 
