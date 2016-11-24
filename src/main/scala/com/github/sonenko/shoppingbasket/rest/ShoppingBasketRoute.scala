@@ -27,7 +27,7 @@ trait ShoppingBasketRoute { this: RootRoute =>
               inquire(basketManager.actor, BasketManagerActor.Commands.ToBasket(
                   basketId,
                   BasketActor.Commands.GetState,
-                  false
+                forceCreate = false
                 ), {case BasketNotFoundError => StatusCodes.OK -> BasketState(Nil)}
               )
             }
@@ -38,7 +38,7 @@ trait ShoppingBasketRoute { this: RootRoute =>
                 inquire(basketManager.actor, BasketManagerActor.Commands.ToBasket(
                   basketId,
                   BasketActor.Commands.AddProduct(addProduct.productId, addProduct.count),
-                  true
+                  forceCreate = true
                 ))
               }
             }
@@ -49,7 +49,7 @@ trait ShoppingBasketRoute { this: RootRoute =>
                 inquire(basketManager.actor, BasketManagerActor.Commands.ToBasket(
                   basketId,
                   BasketActor.Commands.DropProduct(dropProduct.productId, dropProduct.count),
-                  false
+                  forceCreate = false
                 ))
               }
             }

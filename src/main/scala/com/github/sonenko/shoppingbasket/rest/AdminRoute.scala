@@ -27,13 +27,13 @@ trait AdminRoute {
             inquire(basketManager.actor, BasketManagerActor.Commands.ToBasket(
               basketId,
               BasketActor.Commands.GetState,
-              false
+              forceCreate = false
             ), {case BasketNotFoundError => StatusCodes.NotFound})
           }
         } ~
         delete {
           complete {
-            inquire(basketManager.actor, BasketManagerActor.Commands.DropBasket(basketId, false),
+            inquire(basketManager.actor, BasketManagerActor.Commands.DropBasket(basketId, putItemsToStock = false),
               {case BasketNotFoundError => StatusCodes.NotFound})
           }
         }

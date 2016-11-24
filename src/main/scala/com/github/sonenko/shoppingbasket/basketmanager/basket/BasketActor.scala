@@ -91,10 +91,10 @@ class BasketActor(stock: Stock, stopSn: ActorRef => Unit) extends Actor with Act
     case Some(productInBasket) => fn(productInBasket)
   }
 
-  def beforeStop(putProductsBack: Boolean) = {
+  def beforeStop(putProductsBack: Boolean): Unit = {
     if (putProductsBack) {
       state.products.foreach(product => {
-        stock.actor ! StockActor.Commands.PutProduct(product.id, product.count, false)
+        stock.actor ! StockActor.Commands.PutProduct(product.id, product.count, doReplay = false)
       })
     }
   }
@@ -132,18 +132,14 @@ class BasketActor(stock: Stock, stopSn: ActorRef => Unit) extends Actor with Act
     context.unbecome()
   }
 
-  def on(sndr: ActorRef, msg: ProductNotFoundInStockError.type): Unit = {
-    sndr ! msg
-  }
+  def on(sndr: ActorRef, msg: ProductNotFoundInStockError.type): Unit = sndr ! msg
 
-  def on(sndr: ActorRef, msg: ProductAmountIsLowInStockError.type): Unit = {
-    sndr ! msg
-  }
+  def on(sndr: ActorRef, msg: ProductAmountIsLowInStockError.type): Unit = sndr ! msg
 }
 
 object BasketActor {
   def create(ctx: ActorRefFactory, stock: Stock, stopSn: ActorRef => Unit = _ ! PoisonPill) = new Basket {
-    override val actor = ctx.actorOf(Props(classOf[BasketActor], stock, stopSn))
+    override val actor: ActorRef = ctx.actorOf(Props(classOf[BasketActor], stock, stopSn))
   }
 
   sealed trait Command
@@ -161,6 +157,6 @@ trait Basket {
   val updatedAt: DateTime = DateTime.now()
   def isExpired: Boolean = updatedAt.plusSeconds(Config.expireBasketsEverySeconds).isBefore(DateTime.now)
   def updated = new Basket{
-    override val actor = Basket.this.actor
+    override val actor: ActorRef = Basket.this.actor
   }
 }

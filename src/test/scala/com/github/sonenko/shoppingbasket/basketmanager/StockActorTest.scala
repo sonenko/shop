@@ -2,8 +2,8 @@ package com.github.sonenko.shoppingbasket.basketmanager
 
 import akka.actor.ActorSystem
 import akka.testkit.{DefaultTimeout, ImplicitSender, TestActorRef, TestKit}
-import com.github.sonenko.shoppingbasket.stock.StockActor
 import com.github.sonenko.shoppingbasket._
+import com.github.sonenko.shoppingbasket.stock.StockActor
 import org.scalatest.mock.MockitoSugar
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
