@@ -5,7 +5,7 @@ Simple Shopping Basket that able to scale in minutes :)
 simply run Main cass from IDE, or execute next commands from terminal
 ```
 sbt
-run
+rest/run
 ```
 
 #### Run app in prod mode (change `local.conf` in `run` folder)
