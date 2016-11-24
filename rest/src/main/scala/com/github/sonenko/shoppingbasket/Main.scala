@@ -1,12 +1,13 @@
 package com.github.sonenko.shoppingbasket
 
 import akka.actor.ActorSystem
-import akka.event.Logging
+import akka.event.{Logging, LoggingAdapter}
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
-import com.github.sonenko.shoppingbasket.basketmanager.BasketManagerActor
+import com.github.sonenko.shoppingbasket.basketmanager.{BasketManager, BasketManagerActor}
 import com.github.sonenko.shoppingbasket.rest.RootRoute
-import com.github.sonenko.shoppingbasket.stock.StockActor
+import com.github.sonenko.shoppingbasket.stock.{Stock, StockActor}
 
 
 /** Entry point
@@ -21,10 +22,10 @@ class Constructor(implicit val system: ActorSystem) {
   implicit val materializer = ActorMaterializer()
   import system.dispatcher
 
-  val log = Logging.getLogger(system, this)
-  val stock = StockActor.create(system)
-  val basketManager = BasketManagerActor.create(system, stock)
-  val route = new RootRoute(
+  val log: LoggingAdapter = Logging.getLogger(system, this)
+  val stock: Stock = StockActor.create(system)
+  val basketManager: BasketManager = BasketManagerActor.create(system, stock)
+  val route: Route = new RootRoute(
     log = log,
     stock = stock,
     basketManager = basketManager

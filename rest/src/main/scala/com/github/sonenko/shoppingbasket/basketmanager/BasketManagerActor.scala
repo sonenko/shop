@@ -28,7 +28,7 @@ import scala.concurrent.duration._
   */
 class BasketManagerActor(stock: Stock, createBasketFunc: (ActorRefFactory, Stock) => Basket) extends Actor with ActorLogging {
   var baskets: Map[UUID, Basket] = Map()
-  val expire = Config.expireBasketsEverySeconds
+  val expire: Int = Config.expireBasketsEverySeconds
 
   context.system.scheduler.schedule(expire seconds, expire seconds){
     self ! BasketManagerActor.Commands.ExpireBaskets
@@ -90,7 +90,7 @@ object BasketManagerActor {
 
   def create(ctx: ActorRefFactory, stock: Stock, createBasketFunc: (ActorRefFactory, Stock) => Basket = createBasketFunc): BasketManager =
     new BasketManager {
-      override val actor = ctx.actorOf(Props(classOf[BasketManagerActor], stock, createBasketFunc))
+      override val actor: ActorRef = ctx.actorOf(Props(classOf[BasketManagerActor], stock, createBasketFunc))
     }
 
   private def createBasketFunc(ctx: ActorRefFactory, stock: Stock): Basket =

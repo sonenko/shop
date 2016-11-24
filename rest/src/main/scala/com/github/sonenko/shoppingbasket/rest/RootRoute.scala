@@ -5,6 +5,7 @@ import akka.actor.ActorRef
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 import akka.pattern.ask
 import com.github.sonenko.shoppingbasket.basketmanager.BasketManager
 import com.github.sonenko.shoppingbasket.stock.Stock
@@ -24,7 +25,7 @@ import scala.language.implicitConversions
 class RootRoute(val log: LoggingAdapter, val stock: Stock, val basketManager: BasketManager) extends JsonProtocol
   with ShoppingBasketRoute with ProductsRoute with AdminRoute {
 
-  val route = shoppingBasketRoute ~ productsRoute ~ adminRoute
+  val route: Route = shoppingBasketRoute ~ productsRoute ~ adminRoute
 
   def inquire(who: ActorRef, msg: Any, pf: PartialFunction[Any, HttpResponse] = PartialFunction.empty): Future[HttpResponse] =
     inquireInternal(who, msg).map(x => actorAnswerToRest(x, pf))
