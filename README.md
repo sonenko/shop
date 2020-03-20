@@ -1,4 +1,4 @@
-## About (DO NOT USE! it is in development)
+## About (DO NOT USE! It is just for testing)
 Simple Shopping Basket that able to scale in minutes :)
 
 #### Run application in dev mode
